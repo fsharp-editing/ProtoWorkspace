@@ -1,0 +1,4 @@
+FSharp.Compiler.Service
+FSharp.Core
+System.Collections.Immutable
+Microsoft.CodeAnalysis.Workspaces.Common

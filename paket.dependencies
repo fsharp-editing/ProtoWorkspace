@@ -1,0 +1,8 @@
+source https://www.nuget.org/api/v2
+framework: >= net45
+redirects: on
+
+nuget FSharp.Compiler.Service
+nuget FSharp.Core
+nuget Microsoft.CodeAnalysis.Workspaces.Common
+nuget System.Collections.Immutable
