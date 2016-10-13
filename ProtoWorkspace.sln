@@ -10,6 +10,23 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 		paket.dependencies = paket.dependencies
 		paket.lock = paket.lock
+		reference.md = reference.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data", "Data", "{B8CADD49-9C2A-4983-A09A-6DC8F6704A44}"
+	ProjectSection(SolutionItems) = preProject
+		data\module_001.fs = data\module_001.fs
+		data\module_002.fs = data\module_002.fs
+		data\script_001.fsx = data\script_001.fsx
+		data\script_002.fsx = data\script_002.fsx
+		data\sig_001.fsi = data\sig_001.fsi
+		data\sig_002.fsi = data\sig_002.fsi
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projects", "Projects", "{C0D364E2-E301-48BF-AB78-83F99C39FF4A}"
+	ProjectSection(SolutionItems) = preProject
+		data\projects\Library1\Library1.fsproj = data\projects\Library1\Library1.fsproj
+		data\projects\Library2\Library2.fsproj = data\projects\Library2\Library2.fsproj
 	EndProjectSection
 EndProject
 Global
@@ -25,5 +42,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C0D364E2-E301-48BF-AB78-83F99C39FF4A} = {B8CADD49-9C2A-4983-A09A-6DC8F6704A44}
 	EndGlobalSection
 EndGlobal
