@@ -45,11 +45,15 @@
     <None Include="paket.references" />
     <Compile Include="Prelude.fs" />
     <Compile Include="Environment.fs" />
+    <Compile Include="ProjectData.fs" />
     <Compile Include="BufferTracker.fs" />
     <Compile Include="FileSystem.fs" />
     <Compile Include="ProjectConfig.fs" />
     <Compile Include="Workspace.fs" />
     <None Include="Script.fsx" />
+    <None Include="Script1.fsx" />
+    <None Include="Scripts\load-references-release.fsx" />
+    <None Include="Scripts\load-project-release.fsx" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

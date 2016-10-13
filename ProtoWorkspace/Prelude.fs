@@ -38,20 +38,17 @@ module Option =
         | None -> v
 
     /// Gets the option if Some x, otherwise the supplied default value.
-    let inline orElse v =
-        function
+    let inline orElse v = function
         | Some x -> Some x
         | None -> v
 
     /// Gets the value if Some x, otherwise try to get another value by calling a function
-    let inline getOrTry f =
-        function
+    let inline getOrTry f = function
         | Some x -> x
         | None -> f()
 
     /// Gets the option if Some x, otherwise try to get another value
-    let inline orTry f =
-        function
+    let inline orTry f = function
         | Some x -> Some x
         | None -> f()
 
@@ -185,7 +182,7 @@ module String =
         | None -> str
         | Some c  -> 
             strArr.[0] <- Char.ToLower c
-            String (strArr)
+            String strArr
     
     let inline contains (target:string) (str:string) =
         str.Contains target
@@ -201,10 +198,9 @@ module String =
             Array.revInPlace charr
             let digits = Array.takeWhile Char.IsDigit charr
             Array.revInPlace digits
-            String digits
-            |> function
-               | "" -> str, None
-               | index -> str.Substring (0, str.Length - index.Length), Some (int index)
+            String digits |> function
+            | "" -> str, None
+            | index -> str.Substring (0, str.Length - index.Length), Some (int index)
 
     /// Remove all trailing and leading whitespace from the string
     /// return null if the string is null
@@ -215,42 +211,35 @@ module String =
         if isNull value  then null else value.Split(separator, options)
 
     let (|StartsWith|_|) pattern value =
-        if String.IsNullOrWhiteSpace value then
-            None
-        elif value.StartsWith pattern then
-            Some()
+        if String.IsNullOrWhiteSpace value then None
+        elif value.StartsWith pattern then Some ()
         else None
 
     let (|Contains|_|) pattern value =
-        if String.IsNullOrWhiteSpace value then
-            None
-        elif value.Contains pattern then
-            Some()
+        if String.IsNullOrWhiteSpace value then None
+        elif value.Contains pattern then Some ()
         else None
     
     open System.IO
 
     let getLines (str: string) =
         use reader = new StringReader(str)
-        [|
-        let line = ref (reader.ReadLine())
-        while isNotNull (!line) do
-            yield !line
-            line := reader.ReadLine()
-        if str.EndsWith("\n") then
+        [|  let line = ref (reader.ReadLine())
+            while isNotNull (!line) do
+                yield !line
+                line := reader.ReadLine()
+            if str.EndsWith "\n" then
             // last trailing space not returned
             // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
-            yield String.Empty
+                yield String.Empty
         |]
 
     let getNonEmptyLines (str: string) =
         use reader = new StringReader(str)
-        [|
-        let line = ref (reader.ReadLine())
-        while isNotNull (!line) do
-            if (!line).Length > 0 then
-                yield !line
-            line := reader.ReadLine()
+        [|  let line = ref (reader.ReadLine())
+            while isNotNull (!line) do
+                if (!line).Length > 0 then yield !line
+                line := reader.ReadLine()
         |]
 
     /// Parse a string to find the first nonempty line

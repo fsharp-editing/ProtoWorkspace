@@ -5,7 +5,8 @@ open System.IO
 
 type Version = int
 
-type FileSystem (editorBufferTracker: IBufferTracker) =
+type FileSystem (editorBufferTracker:IBufferTracker) =
+    
     static let defaultFileSystem = Shim.FileSystem
 
     let getOpenDocContent (fileName: string) =

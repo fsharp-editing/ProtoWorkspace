@@ -20,6 +20,9 @@ type IHostServicesProvider =
     abstract Assemblies : Assembly ImmutableArray with get
 
 
+
+
+
 [<Export>]
 type HostServicesAggregator [<ImportingConstructor>] 
     ( [<ImportMany>] hostServicesProviders : seq<IHostServicesProvider>) =
@@ -83,6 +86,31 @@ type ChangeBufferRequest =
 
 
 module Workspace =
+    let inline invalidArgf (arg:string) fmt =
+        let error msg = raise (new System.ArgumentException(msg,arg))    
+        Printf.ksprintf error fmt
+    
+    let array1 = [|0|]
+    let array2 = [|0;2|]
+    invalidArgf "array2" "%s\narray1.Length = %i, array2.Length = %i " "arraysHadDifferentLengths" array1.Length array2.Length
+
+
+    let inline invalidArgFmt (arg:string) fmt argArray =    
+        let msg = String.Format(fmt,argArray)
+        raise (new System.ArgumentException(msg,arg))
+
+    let checklength (array1:_[]) (array2:_[]) =
+        if array1.Length <> array2.Length then
+            invalidArgFmt "array2" "{0}\narray1.Length = {1}, array2.Length = {2} " [|"arraysHadDifferentLengths";array1.Length; array2.Length|]
+        else
+            true
+
+
+
+
+
+
+
 
     let convertTextChanges (document:Document) (changes: TextChange seq) = async {
         let! text = document.GetTextAsync() |> Async.AwaitTask
@@ -98,13 +126,13 @@ module Workspace =
                     // change starts inbetween \r\n which is OK when you are offset-based but a problem
                     // when you are line,column-based. This code extends text edits which just overlap
                     // a with a line break to its full line break
-                    if span.Start > 0 && newText.[0] = '\n' 
+                    if  span.Start > 0 && newText.[0] = '\n' 
                       && text.[span.Start - 1] = '\r' then
                         // text: foo\r\nbar\r\nfoo
                         // edit:      [----)
                         "\r", "", TextSpan.FromBounds(span.Start - 1, span.End)
                     elif span.End < text.Length - 1 && text.[span.End] = '\n' 
-                     && newText.[newText.Length - 1] = '\r' then
+                      && newText.[newText.Length - 1] = '\r' then
                      
                         // text: foo\r\nbar\r\nfoo
                         // edit:        [----)
@@ -156,27 +184,27 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator:HostServicesAggregator
 
     override  __.CanApplyChange _ = true
 
-    override __.OpenDocument(docId, activate) =
+    override __.OpenDocument (docId, activate) =
         let doc = base.CurrentSolution.GetDocument docId
         if isNull doc then () else
-        let task = doc.GetTextAsync(CancellationToken.None)
-        task.Wait(CancellationToken.None)
+        let task = doc.GetTextAsync CancellationToken.None
+        task.Wait CancellationToken.None
         let text = task.Result
         base.OnDocumentOpened(docId,text.Container,activate)
 
 
-    override __.CloseDocument(docId) =
+    override __.CloseDocument docId =
         let doc = base.CurrentSolution.GetDocument docId
         if isNull doc then () else
-        let task = doc.GetTextAsync(CancellationToken.None)
-        task.Wait(CancellationToken.None)
+        let task = doc.GetTextAsync CancellationToken.None
+        task.Wait CancellationToken.None
         let text = task.Result
 
-        let versionTask = doc.GetTextVersionAsync(CancellationToken.None)
-        versionTask.Wait(CancellationToken.None)
+        let versionTask = doc.GetTextVersionAsync CancellationToken.None
+        versionTask.Wait CancellationToken.None
         let version = versionTask.Result
         let loader = TextLoader.From(TextAndVersion.Create(text,version,doc.FilePath))
-        base.OnDocumentClosed(docId,loader)
+        base.OnDocumentClosed (docId,loader)
 
 
     member __.AddProject projectInfo =
@@ -186,42 +214,43 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator:HostServicesAggregator
         base.OnProjectReferenceAdded(projectId,projectReference)
 
     member __.AddMetadataReference (projectId, metadataReference) =
-        base.OnMetadataReferenceAdded(projectId, metadataReference)
+        base.OnMetadataReferenceAdded (projectId, metadataReference)
     
-    member __.RemoveMetadataReference(projectId, metadataReference) =
-        base.OnMetadataReferenceRemoved(projectId, metadataReference)
+    member __.RemoveMetadataReference (projectId, metadataReference) =
+        base.OnMetadataReferenceRemoved (projectId, metadataReference)
 
-    member __. AddDocument (documentInfo) =
-        base.OnDocumentAdded(documentInfo)
+    member __. AddDocument documentInfo =
+        base.OnDocumentAdded documentInfo
 
-    member __. RemoveDocument (documentId) =
-        base.OnDocumentRemoved(documentId)
+    member __. RemoveDocument documentId =
+        base.OnDocumentRemoved documentId
 
-    member __. RemoveProject (projectId) =
-        base.OnProjectRemoved(projectId)
+    member __. RemoveProject projectId =
+        base.OnProjectRemoved projectId
 
-    member __. SetCompilationOptions(projectId, options) =
-        base.OnCompilationOptionsChanged(projectId, options)
+    member __. SetCompilationOptions (projectId, options) =
+        base.OnCompilationOptionsChanged (projectId, options)
 
-    member __. SetParseOptions(projectId, parseOptions) =
+    member __. SetParseOptions (projectId, parseOptions) =
         base.OnParseOptionsChanged(projectId, parseOptions)
 
-    member __. OnDocumentChanged(documentId, text) =
+    member __. OnDocumentChanged (documentId, text) =
         base.OnDocumentTextChanged(documentId, text, PreservationMode.PreserveIdentity)
 
-    member __.TryGetDocumentId (filePath) =
-        let documentIds = base.CurrentSolution.GetDocumentIdsWithFilePath(filePath)
+    member __.TryGetDocumentId filePath =
+        let documentIds = base.CurrentSolution.GetDocumentIdsWithFilePath filePath
         match documentIds.FirstOrDefault() with
         | null -> None
         | docId -> Some docId
 
-    member self.GetDocuments(filePath) =
+    member self.GetDocuments filePath =
         base.CurrentSolution
             .GetDocumentIdsWithFilePath(filePath)
             .Select(fun docId -> self.CurrentSolution.GetDocument(docId))
 
-    member self.TryGetDocument(filePath) =
-        self.TryGetDocumentId(filePath)
+
+    member self.TryGetDocument filePath =
+        self.TryGetDocumentId filePath
         |> Option.map(fun docId -> self.CurrentSolution.GetDocument(docId))
 
     interface IDisposable with
@@ -238,24 +267,24 @@ and internal BufferManager (workspace:FSharpWorkspace) as self =
     let workspaceEvent = workspace.WorkspaceChanged
     let subscriptions = ResizeArray<IDisposable>()
     do
-        workspaceEvent.Subscribe(self.OnWorkspaceChanged)
+        workspaceEvent.Subscribe self.OnWorkspaceChanged
         |> subscriptions.Add
 
     let tryAddTransientDocument (fileName:string) (fileContent:string) =
         if String.IsNullOrWhiteSpace fileName then false else
         let projects = findProjectsByFileName fileName workspace
-        if projects.Count() = 0 then false else
+        if projects.Count () = 0 then false else
         let sourceText = SourceText.From fileContent
         let documents: DocumentInfo list =
             (projects,[]) ||> Seq.foldBack (fun project  docs ->
                 let docId = DocumentId.CreateNewId project.Id
-                let version = VersionStamp.Create()
-                let docInfo = DocumentInfo.Create(docId,fileName,filePath=fileName,loader=TextLoader.From(TextAndVersion.Create(sourceText,version)))
+                let version = VersionStamp.Create ()
+                let docInfo = DocumentInfo.Create (docId,fileName,filePath=fileName,loader=TextLoader.From(TextAndVersion.Create(sourceText,version)))
                 docInfo::docs
             )
         lock lockObj (fun () ->
             let docIds = documents |> List.map(fun doc -> doc.Id)
-            transientDocuments.Add(fileName, docIds)
+            transientDocuments.Add (fileName, docIds)
             transientDocumentIds.UnionWith docIds
         )
         documents |> List.iter(fun doc -> workspace.AddDocument doc)
