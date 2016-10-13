@@ -3,7 +3,7 @@
 open System
 open System.IO
 open System.Text
-
+open System.Collections.Generic
 
 
 type LineScanner (line:string) =

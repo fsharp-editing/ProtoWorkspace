@@ -45,7 +45,8 @@
     <None Include="paket.references" />
     <Compile Include="Prelude.fs" />
     <Compile Include="Environment.fs" />
-    <Compile Include="ProjectData.fs" />
+    <Compile Include="SolutionSystem.fs" />
+    <Compile Include="ProjectInfo.fs" />
     <Compile Include="BufferTracker.fs" />
     <Compile Include="FileSystem.fs" />
     <Compile Include="ProjectConfig.fs" />
