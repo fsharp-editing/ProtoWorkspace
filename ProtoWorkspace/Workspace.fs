@@ -20,9 +20,6 @@ type IHostServicesProvider =
     abstract Assemblies : Assembly ImmutableArray with get
 
 
-
-
-
 [<Export>]
 type HostServicesAggregator [<ImportingConstructor>] 
     ( [<ImportMany>] hostServicesProviders : seq<IHostServicesProvider>) =
@@ -86,31 +83,6 @@ type ChangeBufferRequest =
 
 
 module Workspace =
-    let inline invalidArgf (arg:string) fmt =
-        let error msg = raise (new System.ArgumentException(msg,arg))    
-        Printf.ksprintf error fmt
-    
-    let array1 = [|0|]
-    let array2 = [|0;2|]
-    invalidArgf "array2" "%s\narray1.Length = %i, array2.Length = %i " "arraysHadDifferentLengths" array1.Length array2.Length
-
-
-    let inline invalidArgFmt (arg:string) fmt argArray =    
-        let msg = String.Format(fmt,argArray)
-        raise (new System.ArgumentException(msg,arg))
-
-    let checklength (array1:_[]) (array2:_[]) =
-        if array1.Length <> array2.Length then
-            invalidArgFmt "array2" "{0}\narray1.Length = {1}, array2.Length = {2} " [|"arraysHadDifferentLengths";array1.Length; array2.Length|]
-        else
-            true
-
-
-
-
-
-
-
 
     let convertTextChanges (document:Document) (changes: TextChange seq) = async {
         let! text = document.GetTextAsync() |> Async.AwaitTask
@@ -138,9 +110,9 @@ module Workspace =
                         // edit:        [----)
                         "", "\n", TextSpan.FromBounds(span.Start, span.End + 1)
                     else
-                        "","",span
-                else
                     "","",span
+                else
+                "","",span
             let linePositionSpan = text.Lines.GetLinePositionSpan span
             {   NewText     = prefix + newText + postfix
                 StartLine   = linePositionSpan.Start.Line
@@ -159,7 +131,8 @@ module Workspace =
             |> Map.ofSeq
 
         let rec loop (dirInfo:DirectoryInfo) projects =
-            if isNull dirInfo then projects else
+            if isNull dirInfo then projects 
+            else
             match candidates.TryFind dirInfo.FullName with
             | Some projects -> projects
             | None -> loop dirInfo.Parent projects
@@ -182,11 +155,12 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator:HostServicesAggregator
 
     override __.CanOpenDocuments = true
 
-    override  __.CanApplyChange _ = true
+    override __.CanApplyChange _ = true
 
     override __.OpenDocument (docId, activate) =
         let doc = base.CurrentSolution.GetDocument docId
-        if isNull doc then () else
+        if isNull doc then () 
+        else
         let task = doc.GetTextAsync CancellationToken.None
         task.Wait CancellationToken.None
         let text = task.Result
@@ -195,7 +169,8 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator:HostServicesAggregator
 
     override __.CloseDocument docId =
         let doc = base.CurrentSolution.GetDocument docId
-        if isNull doc then () else
+        if isNull doc then () 
+        else
         let task = doc.GetTextAsync CancellationToken.None
         task.Wait CancellationToken.None
         let text = task.Result
@@ -232,10 +207,10 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator:HostServicesAggregator
         base.OnCompilationOptionsChanged (projectId, options)
 
     member __. SetParseOptions (projectId, parseOptions) =
-        base.OnParseOptionsChanged(projectId, parseOptions)
+        base.OnParseOptionsChanged (projectId, parseOptions)
 
     member __. OnDocumentChanged (documentId, text) =
-        base.OnDocumentTextChanged(documentId, text, PreservationMode.PreserveIdentity)
+        base.OnDocumentTextChanged (documentId, text, PreservationMode.PreserveIdentity)
 
     member __.TryGetDocumentId filePath =
         let documentIds = base.CurrentSolution.GetDocumentIdsWithFilePath filePath
@@ -246,16 +221,16 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator:HostServicesAggregator
     member self.GetDocuments filePath =
         base.CurrentSolution
             .GetDocumentIdsWithFilePath(filePath)
-            .Select(fun docId -> self.CurrentSolution.GetDocument(docId))
+            .Select (fun docId -> self.CurrentSolution.GetDocument docId)
 
 
     member self.TryGetDocument filePath =
         self.TryGetDocumentId filePath
-        |> Option.map(fun docId -> self.CurrentSolution.GetDocument(docId))
+        |> Option.map (fun docId -> self.CurrentSolution.GetDocument docId)
 
     interface IDisposable with
         member __.Dispose () = 
-            disposables |> Seq.iter (fun d -> d.Dispose())
+            disposables |> Seq.iter dispose
             disposables.Clear()
 
 
@@ -271,54 +246,62 @@ and internal BufferManager (workspace:FSharpWorkspace) as self =
         |> subscriptions.Add
 
     let tryAddTransientDocument (fileName:string) (fileContent:string) =
-        if String.IsNullOrWhiteSpace fileName then false else
+        if String.IsNullOrWhiteSpace fileName then false 
+        else
         let projects = findProjectsByFileName fileName workspace
-        if projects.Count () = 0 then false else
+        if projects.Count () = 0 then false 
+        else
         let sourceText = SourceText.From fileContent
         let documents: DocumentInfo list =
             (projects,[]) ||> Seq.foldBack (fun project  docs ->
                 let docId = DocumentId.CreateNewId project.Id
                 let version = VersionStamp.Create ()
-                let docInfo = DocumentInfo.Create (docId,fileName,filePath=fileName,loader=TextLoader.From(TextAndVersion.Create(sourceText,version)))
+                let docInfo = DocumentInfo.Create 
+                                ( docId
+                                , fileName
+                                , filePath = fileName
+                                , loader = TextLoader.From(TextAndVersion.Create(sourceText,version))
+                                )
                 docInfo::docs
             )
         lock lockObj (fun () ->
-            let docIds = documents |> List.map(fun doc -> doc.Id)
+            let docIds = documents |> List.map (fun doc -> doc.Id)
             transientDocuments.Add (fileName, docIds)
             transientDocumentIds.UnionWith docIds
         )
-        documents |> List.iter(fun doc -> workspace.AddDocument doc)
+        documents |> List.iter (fun doc -> workspace.AddDocument doc)
         true
 
 
     member __.UpdateBuffer (request:Request) = async {
-        let buffer = if request.FromDisk then File.ReadAllText(request.FileName) else request.Buffer
+        let buffer = if request.FromDisk then File.ReadAllText request.FileName else request.Buffer
         let changes = request.Changes
         let documentIds = workspace.CurrentSolution.GetDocumentIdsWithFilePath request.FileName 
         if not documentIds.IsEmpty then
             if changes = [] then
                 let sourceText = SourceText.From buffer
-                documentIds |> Seq.iter(fun docId -> workspace.OnDocumentChanged(docId, sourceText)) 
+                documentIds |> Seq.iter (fun docId -> workspace.OnDocumentChanged(docId, sourceText)) 
             else
-                for docId in documentIds do
-                    let doc = workspace.CurrentSolution.GetDocument docId 
-                    let! sourceText = doc.GetTextAsync() |> Async.AwaitTask
-                    let sourceText =
-                        (sourceText, changes) 
-                        ||> List.fold (fun sourceText change ->
-                            let startOffset = sourceText.Lines.GetPosition(LinePosition(change.StartLine,change.StartLine))
-                            let endOffset = sourceText.Lines.GetPosition(LinePosition(change.EndLine,change.EndColumn))
-                            sourceText.WithChanges
-                                ([| TextChange(TextSpan(startOffset, endOffset - startOffset), change.NewText) |])
-                        )
-                    workspace.OnDocumentChanged(docId, sourceText)
+            for docId in documentIds do
+                let doc = workspace.CurrentSolution.GetDocument docId 
+                let! sourceText = doc.GetTextAsync() |> Async.AwaitTask
+                let sourceText =
+                    (sourceText, changes) 
+                    ||> List.fold (fun sourceText change ->
+                        let startOffset = sourceText.Lines.GetPosition(LinePosition(change.StartLine,change.StartLine))
+                        let endOffset = sourceText.Lines.GetPosition(LinePosition(change.EndLine,change.EndColumn))
+                        sourceText.WithChanges
+                            [| TextChange(TextSpan(startOffset, endOffset - startOffset), change.NewText) |]
+                    )
+                workspace.OnDocumentChanged(docId, sourceText)
         elif not (isNull buffer) then
             tryAddTransientDocument request.FileName buffer |> ignore
     }
             
 
     member __.UpdateChangeBuffer (request:ChangeBufferRequest) = async {
-        if isNull request.FileName then () else
+        if isNull request.FileName then () 
+        else
         let documentIds = workspace.CurrentSolution.GetDocumentIdsWithFilePath( request.FileName )
         if not documentIds.IsEmpty then
             for docId in documentIds do
@@ -328,10 +311,10 @@ and internal BufferManager (workspace:FSharpWorkspace) as self =
                 let endOffset = sourceText.Lines.GetPosition(LinePosition(request.EndLine,request.EndColumn))
                 let sourceText = 
                     sourceText.WithChanges
-                        ([| TextChange(TextSpan(startOffset, endOffset - startOffset), request.NewText) |])
+                        [| TextChange(TextSpan(startOffset, endOffset - startOffset), request.NewText) |]
                 workspace.OnDocumentChanged(docId, sourceText)
         else
-            tryAddTransientDocument request.FileName request.NewText |> ignore
+        tryAddTransientDocument request.FileName request.NewText |> ignore
     }
 
     member __.OnWorkspaceChanged (args:WorkspaceChangeEventArgs) =
@@ -343,8 +326,8 @@ and internal BufferManager (workspace:FSharpWorkspace) as self =
                 (args.OldSolution.GetDocument args.DocumentId).FilePath
             | _ -> String.Empty
 
-        if String.IsNullOrEmpty filename then () else
-
+        if String.IsNullOrEmpty filename then () 
+        else
         lock lockObj ( fun ()  ->
             match  Dict.tryFind filename transientDocuments with
             | None -> ()
@@ -358,7 +341,7 @@ and internal BufferManager (workspace:FSharpWorkspace) as self =
 
     interface IDisposable with
         member __.Dispose () = 
-            subscriptions |> Seq.iter (fun d -> d.Dispose())
+            subscriptions |> Seq.iter dispose
             subscriptions.Clear()
       
 
