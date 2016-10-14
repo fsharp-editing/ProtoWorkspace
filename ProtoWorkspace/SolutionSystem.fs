@@ -31,7 +31,7 @@ type SectionBlock = {
     BlockType         : string
     ParenthesizedName : string
     Value             : string
-    KeyMap            : (string*string) seq
+    KeyMap            : (string*string) []
 }
 
 
@@ -39,31 +39,35 @@ type SectionBlock = {
 module SectionBlock =
 
     let parse (reader:TextReader) =
-        let rec findStart ln =
+        let rec findStart()  =
             match reader.ReadLine() with 
-            | null -> ln 
+            | null -> failwith "found null while parsing a section block"
             | line -> 
                 let startline = line.TrimStart [||]
                 if startline <> String.Empty then startline 
-                else findStart startline
-        let startline         = reader.ReadLine() |> findStart
+                else findStart()
+        let startline         = findStart()
+        
         let scanner           = LineScanner startline
         let blockType         = scanner.ReadUpToAndEat "("
         let parenthesizedName = scanner.ReadUpToAndEat ") = "
         let sectionValue      = scanner.ReadRest()
-        
-        let rec findPairs () = seq {
+        printfn "section blocktype is - %s" blockType
+        printfn "End%s" blockType
+        let rec findPairs () = [|
             match reader.ReadLine() with
             | null -> () 
-            | txt when txt = "End" + blockType  -> ()
-            | "" ->  yield! findPairs()
             | line ->
-                let scanner = LineScanner line
-                let key = scanner.ReadUpToAndEat " = "
-                let value = scanner.ReadRest() 
-                yield (key,value)
-                yield! findPairs()
-        }
+                match line.TrimStart [||] with
+                | txt when txt = "End" + blockType  -> ()
+                | "" ->  yield! findPairs()
+                | line ->
+                    let scanner = LineScanner line
+                    let key = scanner.ReadUpToAndEat " = "
+                    let value = scanner.ReadRest() 
+                    yield (key,value)
+                    yield! findPairs()
+        |]
         let keyMap = findPairs()
 
         {   BlockType         = blockType
@@ -93,7 +97,7 @@ type ProjectBlock = {
     ProjectName : string
     ProjectPath : string
     ProjectGuid : Guid
-    ProjectSections : SectionBlock seq
+    ProjectSections : SectionBlock []
 } 
 
 
@@ -104,37 +108,41 @@ module ProjectBlock =
         let startLine = reader.ReadLine().TrimStart [||]
         let scanner = LineScanner startLine
 
-        let invalid() = raise <| exn "Invalid Project Block in Solution"
-
-        if scanner.ReadUpToAndEat "(\"" <> "Project" then invalid()
+        let invalid str = raise <| exn(sprintf "Invalid Project Block in Solution - expected %s" str)
+        
+        if scanner.ReadUpToAndEat "(\"" <> "Project" then invalid "Project"
 
         let projectTypeGuid = 
             Guid.Parse <| scanner.ReadUpToAndEat "\")"
 
-        if scanner.ReadUpToAndEat("\"").Trim() <> "=" then invalid()
+        if scanner.ReadUpToAndEat("\"").Trim() <> "=" then invalid "="
 
         let projectName = 
             scanner.ReadUpToAndEat "\""
 
-        if scanner.ReadUpToAndEat("\"").Trim() <> "," then invalid()
+        if scanner.ReadUpToAndEat("\"").Trim() <> "," then invalid ","
         
         let projectPath = 
             scanner.ReadUpToAndEat "\""
 
-        if scanner.ReadUpToAndEat("\"").Trim() <> "," then invalid()
+        if scanner.ReadUpToAndEat("\"").Trim() <> "," then invalid ","
 
         let projectGuid = 
             Guid.Parse <| scanner.ReadUpToAndEat "\""
 
-        let rec getSections() = seq {
+        let rec getSections() = [|
             if not (Char.IsWhiteSpace <| char (reader.Peek())) then () else
             yield SectionBlock.parse reader
             yield! getSections()
-        }
+        |]
         let projectSections = getSections()
 
-        let peekChar c = (reader.Peek() |> char) <> c
-        if peekChar 'P' && peekChar 'G' then invalid()
+        let peekCharNot c = (reader.Peek() |> char) <> c
+        // Expect to see "EndProject" but be tolerant with missing tags as in Dev12. 
+        // Instead, we may see either P' for "Project" or 'G' for "Global", which will be handled next.
+        if peekCharNot 'P' && peekCharNot 'G' then 
+            if reader.ReadLine() <> "EndProject" then invalid "EndProject"
+            
 
         {   ProjectTypeGuid = projectTypeGuid
             ProjectName     = projectName
@@ -161,11 +169,11 @@ module ProjectBlock =
 
 
 type SolutionFile = {
-    HeaderLines         : string seq
+    HeaderLines         : string []
     VSVersionLineOpt    : string
     MinVSVersionLineOpt : string
-    ProjectBlocks       : ProjectBlock seq
-    GlobalSectionBlocks : SectionBlock seq
+    ProjectBlocks       : ProjectBlock []
+    GlobalSectionBlocks : SectionBlock []
 }
         
         
@@ -194,7 +202,7 @@ module SolutionFile =
 
     let private getNextNonEmptyLine (reader:TextReader) =
         let rec getLine (line:string) =
-            if isNull line || line.Trim() = String.Empty then line else
+            if isNull line || line.Trim() <> String.Empty then line else
             getLine <| reader.ReadLine()
         getLine <| reader.ReadLine()
 
@@ -204,43 +212,56 @@ module SolutionFile =
             && "\r\n".Contains(reader.Peek()|>char|>string) do
             reader.ReadLine() |> ignore
 
+    let inline private parseError expected actual =
+        raise(exn(sprintf "invalid global section - expected '%s', was - '%s'" expected actual))
 
-    let parseGlobal (reader:TextReader) : SectionBlock seq =
-        if reader.Peek() = -1 then Seq.empty 
-        elif getNextNonEmptyLine reader <> "Global" then raise(exn "invalid global section") else
+    let private parseCheck expected actual =
+        if expected <> actual then parseError expected actual
+            
 
-        let rec getBlocks() = seq {
-            if reader.Peek() = -1 || Char.IsWhiteSpace(reader.Peek()|>char) then () else
+
+    let parseGlobal (reader:TextReader) : SectionBlock [] =
+        if reader.Peek() = -1 then [||]
+        else
+        let firstline = getNextNonEmptyLine reader
+        printfn "%s" firstline
+        parseCheck "Global" firstline
+        let rec getBlocks() = [|
+            if reader.Peek() = -1 || not(Char.IsWhiteSpace(reader.Peek()|>char)) then () 
+            else
             yield SectionBlock.parse reader
             yield! getBlocks()
-        }
+        |]
         let globalSectionBlocks = getBlocks()
-        
-        if getNextNonEmptyLine reader <> "EndGlobal" then raise(exn "invalid global section") else
+        printfn "%A" globalSectionBlocks
+        parseCheck "EndGlobal" (getNextNonEmptyLine reader)
         consumeEmptyLines reader
         globalSectionBlocks
 
 
     let parse (reader:TextReader) = 
-        let headerLines = ResizeArray()
+        
         let headerLine1 = getNextNonEmptyLine reader
 
         if isNull headerLine1 || not(headerLine1.StartsWith("Microsoft Visual Studio Solution File")) then
-            raise(exn "invalid global section")
+            parseError "Microsoft Visual Studio Solution File" headerLine1
 
         /// skip comment lines and empty lines
-        let rec getLines() = seq {
-            if reader.Peek() = -1 || "#\r\n".Contains(reader.Peek()|>char|>string) then () else
+        let rec getLines() = [|
+            // finish if not a commentline, empty line, or if it's the end of the file
+            if reader.Peek() = -1 || not (Array.contains (reader.Peek()|>char) [|'#';'\r';'\n'|]) then () else
+            if reader.Peek() = -1 then () else
             yield reader.ReadLine()
             yield! getLines()
-        }
-        let headerLines = Seq.append [headerLine1] (getLines())
+        |]
+        let hl = getLines()
+        let headerLines = Array.append [|headerLine1|] hl
 
         let visualStudioVersionLineOpt =
             if char(reader.Peek()) = 'V' then 
                 let line = getNextNonEmptyLine reader
-                if not (line.StartsWith "VisualStudioVersion") then 
-                    raise(exn "invalid global section")
+                if not(line.StartsWith "VisualStudioVersion") then 
+                    parseError "VisualStudioVersion" line
                 line
             else String.Empty // should this be null?
 
@@ -248,21 +269,21 @@ module SolutionFile =
             if char(reader.Peek()) = 'M' then
                 let line = getNextNonEmptyLine reader
                 if not(line.StartsWith "MinimumVisualStudioVersion") then
-                    raise(exn "invalid global section")
+                    raise(exn "invalid global section - didn't start with 'MinimumVisualStudioVersion'")
                 line
             else String.Empty // should this be null?
 
         // Parse project blocks while we have them
-        let rec getBlocks() = seq {
+        let rec getBlocks() = [|
             if char(reader.Peek()) <> 'P' then () else
             yield ProjectBlock.parse reader
             // Comments and Empty Lines between the Project Blocks are skipped
             getLines() |> ignore
             yield! getBlocks()        
-        }
+        |]
         // Parse project blocks while we have them
         let projectBlocks = getBlocks()
-
+        projectBlocks|> Array.iter (printfn "%A")
         // We now have a global block
         let globalSectionBlocks = parseGlobal reader
 
