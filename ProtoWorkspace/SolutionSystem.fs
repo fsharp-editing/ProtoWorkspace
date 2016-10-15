@@ -4,6 +4,8 @@ open System
 open System.IO
 open System.Text
 open System.Collections.Generic
+open Microsoft.CodeAnalysis
+open Microsoft.Build.Execution
 
 
 type LineScanner (line:string) =
@@ -168,7 +170,13 @@ module ProjectBlock =
         builder.AppendLine "EndProject" |> string
 
 
+//    let toProjectInfo (projectBlock:ProjectBlock) =
+//        ProjectInfo.
+//        let p = projectBlock
+
+
 type SolutionFile = {
+    Path                : string
     HeaderLines         : string []
     VSVersionLineOpt    : string
     MinVSVersionLineOpt : string
@@ -220,7 +228,7 @@ module SolutionFile =
             
 
 
-    let parseGlobal (reader:TextReader) : SectionBlock [] =
+    let private parseGlobal (reader:TextReader) : SectionBlock [] =
         if reader.Peek() = -1 then [||]
         else
         let firstline = getNextNonEmptyLine reader
@@ -239,7 +247,7 @@ module SolutionFile =
         globalSectionBlocks
 
 
-    let parse (reader:TextReader) = 
+    let private parse path (reader:TextReader) = 
         
         let headerLine1 = getNextNonEmptyLine reader
 
@@ -290,11 +298,33 @@ module SolutionFile =
         if reader.Peek() <> -1 then
             raise(exn "Should be at the end of file")
 
-        {   HeaderLines         = headerLines
+        {   Path                = path
+            HeaderLines         = headerLines
             VSVersionLineOpt    = visualStudioVersionLineOpt
             MinVSVersionLineOpt = minimumVisualStudioVersionLineOpt
             ProjectBlocks       = projectBlocks
             GlobalSectionBlocks = globalSectionBlocks
         }
 
+    
+    /// Loads the solution file at path as a filestream
+    let loadFile (path:string) =
+        use stream = File.OpenRead path
+        use reader = new StreamReader(stream)
+        parse path reader
+
+
+    /// Loads the solution file at path as a string closes file and reads the string
+    let load (path:string) =
+        use reader = new StringReader(File.ReadAllText path)
+        parse path reader
+
+//    let toSolutionInfo (solutionFile:SolutionFile) =
+//        solutionFile.ProjectBlocks |> Array.map (fun x -> x.)
+//        SolutionInfo.Create
+//            (   SolutionId.CreateNewId()
+//            ,   VersionStamp.Create()
+//            ,   solutionFile.Path
+//            ,   solutionFile.ProjectBlocks)
+//
 

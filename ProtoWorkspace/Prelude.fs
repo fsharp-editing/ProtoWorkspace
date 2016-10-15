@@ -6,8 +6,8 @@ open System.Diagnostics
 type FileName = string
 type FilePath = string
 
-let inline debug msg = Printf.kprintf Debug.WriteLine msg
-let inline fail msg = Printf.kprintf Debug.Fail msg
+let inline debugfn msg = Printf.kprintf Debug.WriteLine msg
+let inline failfn msg = Printf.kprintf Debug.Fail msg
 let inline isNull v = match v with | null -> true | _ -> false
 let inline isNotNull v = not (isNull v)
 let inline dispose (disposable:#IDisposable) = disposable.Dispose ()
@@ -15,6 +15,20 @@ let inline dispose (disposable:#IDisposable) = disposable.Dispose ()
 let inline Ok a = Choice1Of2 a
 let inline Fail a = Choice2Of2 a
 let inline (|Ok|Fail|) a = a
+
+/// String Equals Ordinal Ignore Case
+let (|EqualsIC|_|) (str:string) arg =
+  if String.Compare(str, arg, StringComparison.OrdinalIgnoreCase) = 0
+  then Some () else None
+
+/// Null coalescing operator
+let ( <?> ) a b = if isNull a then b else a
+
+/// If arg is null raise an `ArgumentNullException` with the argname
+let inline checkNullArg arg argName =
+    if isNull arg then nullArg argName 
+
+
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Option =
@@ -67,6 +81,7 @@ module Option =
         match opt with
         | Some x -> someAction x
         | None   -> noneAction ()
+
 
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -168,6 +183,7 @@ module Array =
                count <- count + 1
         if count = 0 then [||] else
         result.[0..count-1]
+
 
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -288,3 +304,72 @@ module Dict =
         let dict = Dictionary()
         for k, v in xs do dict.[k] <- v
         dict
+
+
+module PropertyConverter =
+
+    // TODO - railway this
+    let toGuid propertyValue =
+        match Guid.TryParse propertyValue with
+        | true, value -> value
+        | _ -> failwithf "Couldn't parse '%s' into a Guid" propertyValue
+    
+    let toDefineConstants propertyValue =
+        if String.IsNullOrWhiteSpace propertyValue then [||] else
+        propertyValue.Split([|';'|], StringSplitOptions.RemoveEmptyEntries)
+
+
+
+    // TODO - railway this
+    let toBoolean propertyValue =
+        match Boolean.TryParse propertyValue with
+        | true, value -> value
+        | _ -> failwithf "Couldn't parse '%s' into a Boolean" propertyValue 
+
+
+    let toBooleanOr propertyValue defaultArg =
+        match Boolean.TryParse propertyValue with
+        | true, value -> value
+        | _ -> defaultArg
+
+
+(*
+    Omnisharp does it like this
+
+            public static bool? ToBoolean(string propertyValue)
+        {
+            if (string.IsNullOrWhiteSpace(propertyValue))
+            {
+                return null;
+            }
+
+            try
+            {
+                return Convert.ToBoolean(propertyValue);
+            }
+            catch (FormatException)
+            {
+                return null;
+            }
+        }
+
+        public static bool ToBoolean(string propertyValue, bool defaultValue)
+        {
+            if (string.IsNullOrWhiteSpace(propertyValue))
+            {
+                return defaultValue;
+            }
+
+            try
+            {
+                return Convert.ToBoolean(propertyValue);
+            }
+            catch (FormatException)
+            {
+                return defaultValue;
+            }
+        }
+*)
+
+
+

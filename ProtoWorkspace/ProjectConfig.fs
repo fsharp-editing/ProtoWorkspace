@@ -3,6 +3,9 @@
 open System.IO
 
 
+
+
+
 type ProjectSettings = 
     {   IsForStandaloneScript : bool  
         ProjectFile           : FileName
@@ -23,6 +26,20 @@ type ProjectConfig =
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ProjectConfig = 
+
+    /// F# project file extension - `.fsproj`
+    let [<Literal>] fsprojext = ".fsproj"
+
+    (* Compiler Flags *)
+
+    /// Compiler Flag `--noframework`
+    let [<Literal>] noframeworkFlag = "--noframework" 
+    /// Compiler Flag `--debug-`
+    let [<Literal>] debugFlag       = "--debug-" 
+    /// Compiler Flag `--optimize-`
+    let [<Literal>] optimizeFlag    = "--optimize-"
+    /// Compiler Flag `--tailcalls-`
+    let [<Literal>] tailcallsFlag   = "--tailcalls-"
 
     /// Checks a file path to see if the extension matches `.fsproj`
     let isFSharpProject projectPath =

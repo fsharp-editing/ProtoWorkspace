@@ -2,3 +2,11 @@ FSharp.Compiler.Service
 FSharp.Core
 System.Collections.Immutable
 Microsoft.CodeAnalysis.Workspaces.Common
+Microsoft.Extensions.Logging
+Microsoft.Extensions.Configuration
+Microsoft.Extensions.Caching.Memory
+Microsoft.Extensions.FileSystemGlobbing
+Microsoft.Extensions.PlatformAbstractions
+Microsoft.Extensions.Logging.Console
+System.IO.FileSystem.Watcher
+System.Threading.Thread

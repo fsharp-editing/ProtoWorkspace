@@ -14,6 +14,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
+open Microsoft.CodeAnalysis.Internal.Log
 
 
 type IHostServicesProvider =
@@ -153,10 +154,32 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator:HostServicesAggregator
         disposables.Add bufferManager
     //let activeDocuments = HashSet<DocumentId>()
 
+    new () = new FSharpWorkspace(HostServicesAggregator(Seq.empty))
+
     override __.CanOpenDocuments = true
 
     override __.CanApplyChange _ = true
 
+
+    /// Adds a document to the workspace.
+    member self.AddDocument (documentInfo:DocumentInfo) =
+        checkNullArg documentInfo "documentInfo"
+        base.OnDocumentAdded documentInfo
+        self.CurrentSolution.GetDocument documentInfo.Id
+    
+    
+    /// Adds a document to the workspace.
+    member self.AddDocument (projectId:ProjectId, name:string, text:SourceText) =
+        checkNullArg projectId "projectId"  
+        checkNullArg name "name"
+        checkNullArg text "text"
+        DocumentInfo.Create
+            (   DocumentId.CreateNewId projectId
+            ,   name
+            ,   loader=TextLoader.From(TextAndVersion.Create(text, VersionStamp.Create()))
+            )
+
+    /// Puts the specified document into the open state.
     override __.OpenDocument (docId, activate) =
         let doc = base.CurrentSolution.GetDocument docId
         if isNull doc then () 
@@ -166,7 +189,8 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator:HostServicesAggregator
         let text = task.Result
         base.OnDocumentOpened(docId,text.Container,activate)
 
-
+    
+    /// Puts the specified document into the closed state.
     override __.CloseDocument docId =
         let doc = base.CurrentSolution.GetDocument docId
         if isNull doc then () 
@@ -182,8 +206,42 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator:HostServicesAggregator
         base.OnDocumentClosed (docId,loader)
 
 
-    member __.AddProject projectInfo =
+    
+
+    /// Adds a project to the workspace. All previous projects remain intact.
+    member self.AddProject projectInfo =
+        checkNullArg projectInfo "projectInfo"
         base.OnProjectAdded projectInfo
+        base.UpdateReferencesAfterAdd()
+        self.CurrentSolution.GetProject projectInfo.Id
+
+
+    /// Adds a project to the workspace. All previous projects remain intact.
+    member self.AddProject (name:string) =
+        ProjectInfo.Create
+            (   ProjectId.CreateNewId()
+            ,   VersionStamp.Create()
+            ,   name
+            ,   name
+            ,   "FSharp"
+            ) 
+        |> self.AddProject
+        
+
+    /// Adds multiple projects to the workspace at once. All existing projects remain intact.
+    member self.AddProjects (projectInfos:seq<_>) =
+        checkNullArg projectInfos "projectInfos"
+        projectInfos |> Seq.iter self.OnProjectAdded
+        base.UpdateReferencesAfterAdd()       
+        
+
+    /// Adds an entire solution to the workspace, replacing any existing solution.
+    member self.AddSolution (solutionInfo:SolutionInfo) =
+        checkNullArg solutionInfo "solutionInfo"
+        base.OnSolutionAdded solutionInfo
+        base.UpdateReferencesAfterAdd()
+        self.CurrentSolution
+
 
     member __.AddProjectReference (projectId, projectReference) =
         base.OnProjectReferenceAdded(projectId,projectReference)
@@ -194,8 +252,8 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator:HostServicesAggregator
     member __.RemoveMetadataReference (projectId, metadataReference) =
         base.OnMetadataReferenceRemoved (projectId, metadataReference)
 
-    member __. AddDocument documentInfo =
-        base.OnDocumentAdded documentInfo
+//    member __. AddDocument documentInfo =
+//        base.OnDocumentAdded documentInfo
 
     member __. RemoveDocument documentId =
         base.OnDocumentRemoved documentId
@@ -227,6 +285,9 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator:HostServicesAggregator
     member self.TryGetDocument filePath =
         self.TryGetDocumentId filePath
         |> Option.map (fun docId -> self.CurrentSolution.GetDocument docId)
+
+
+
 
     interface IDisposable with
         member __.Dispose () = 
@@ -269,7 +330,7 @@ and internal BufferManager (workspace:FSharpWorkspace) as self =
             transientDocuments.Add (fileName, docIds)
             transientDocumentIds.UnionWith docIds
         )
-        documents |> List.iter (fun doc -> workspace.AddDocument doc)
+        documents |> List.iter (fun doc -> workspace.AddDocument doc |> ignore)
         true
 
 

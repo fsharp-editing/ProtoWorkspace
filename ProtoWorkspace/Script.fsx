@@ -21,35 +21,20 @@ open Microsoft.CodeAnalysis.MSBuild
 open Microsoft.CodeAnalysis.Host.Mef
 open System.IO
 
+
+let testSlnPath = "../data/TestSln.sln"
+let module1 = File.ReadAllText "../data/module_001.fs"
+let module2 = File.ReadAllText "../data/module_002.fs"
+let script1 = File.ReadAllText "../data/script_001.fsx"
+
+
 let setup (ctx:CompositionContext) = 
     MefHostServices.Create ctx
 
 
-let adhoc = new AdhocWorkspace()
-let msbuildwork = MSBuildWorkspace.Create()
+let agg = HostServicesAggregator(Seq.empty)
 
-Path.GetFullPath("..\data\TestSln.sln");;
+let wks = new FSharpWorkspace()
 
-let load = (msbuildwork.OpenSolutionAsync "..\data\TestSln.sln").Result ;;
-load.Id;;
-printfn "%A" msbuildwork.CurrentSolution.FilePath;;
+wks.AddSolution((SolutionFile.load testSlnPath).)
 
-msbuildwork.CurrentSolution.Projects
-|> Seq.iter (printfn "%A")
-;;
-//ProjectInfo.
-msbuildwork.OpenProjectAsync("C:\Users\jared\Programming Projects\ProtoWorkspace\data\projects\Library1\Library1.fsproj")
-
-type Foo = {
-    Foo:int
-    }
-
-type Bar = {
-    F:Foo
-    }
-
-let bar = {
-    F = {
-        Foo = 10
-        }
-    }
