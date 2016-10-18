@@ -23,11 +23,10 @@
 /// from multiple threads.
 /// </para>
 /// </remarks>
-type internal NonReentrantLock(?useThisInstanceForSynchronization:bool) =
+type internal NonReentrantLock(?useThisInstanceForSynchronization : bool) = 
     let useThisInstanceForSynchronization = defaultArg useThisInstanceForSynchronization false
     /// <summary>
     /// A synchronization object to protect access to the <see cref="_owningThreadId"/> field and to be pulsed
     /// when <see cref="Release"/> is called and during cancellation.
     /// </summary>
     let syncLock = obj()
-

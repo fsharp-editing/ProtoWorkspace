@@ -1,5 +1,4 @@
 ﻿System.IO.Directory.SetCurrentDirectory __SOURCE_DIRECTORY__
-#r "bin/release/protoworkspace.dll"
 #r "System.Reflection"
 #r "../packages/System.Reflection.Metadata/lib/netstandard1.1/System.Reflection.Metadata.dll"
 #r "../packages/System.Collections.Immutable/lib/netstandard1.0/System.Collections.Immutable.dll"
@@ -11,6 +10,8 @@
 #r "../packages/Microsoft.CodeAnalysis.Common/lib/net45/Microsoft.CodeAnalysis.dll"
 #r "../packages/Microsoft.CodeAnalysis.Workspaces.Common/lib/net45/Microsoft.CodeAnalysis.Workspaces.Desktop.dll"
 #r "../packages/Microsoft.CodeAnalysis.Workspaces.Common/lib/net45/Microsoft.CodeAnalysis.Workspaces.dll"
+#r @"..\packages\FSharp.Compiler.Service\lib\net45\FSharp.Compiler.Service.dll"
+#r "bin/debug/protoworkspace.dll"
 
 open ProtoWorkspace
 open ProtoWorkspace.Workspace
@@ -36,5 +37,8 @@ let agg = HostServicesAggregator(Seq.empty)
 
 let wks = new FSharpWorkspace()
 
-wks.AddSolution((SolutionFile.load testSlnPath).)
+testSlnPath
+|> SolutionFile.load
+|> SolutionFile.toSolutionInfo
+|> wks.AddSolution
 

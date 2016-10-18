@@ -1,5 +1,5 @@
 ﻿module MSBuildProjectSystem
-open System.Collections.Generic
+
 open Microsoft.Extensions.Configuration
 
 type IProjectSystem =
