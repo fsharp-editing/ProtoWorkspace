@@ -3,9 +3,7 @@
 open System
 open System.IO
 open System.Text
-open System.Collections.Generic
 open Microsoft.CodeAnalysis
-open Microsoft.Build.Execution
 
 type LineScanner(line : string) = 
     let mutable line = line
@@ -131,6 +129,26 @@ module ProjectBlock =
             |> builder.Append
             |> ignore
         builder.AppendLine "EndProject" |> string
+
+    let toProjectInfo (block: ProjectBlock) : ProjectInfo =
+        ProjectInfo.Create(
+            id = ProjectId.CreateFromSerialized block.ProjectGuid,
+            version = VersionStamp.Create(),
+            name = block.ProjectName,
+            assemblyName = "fake assembly name",
+            language = "en-us"
+            // ?filePath:string
+            // ?outputFilePath:string
+            // ?compilationOptions:CompilationOptions
+            // ?parseOptions:ParseOptions
+            // ?documents:IEnumerable<DocumentInfo>
+            // ?projectReferences:IEnumerable<ProjectReference> 
+            // ?metadataReferences:IEnumerable<MetadataReference> 
+            // ?analyzerReferences:IEnumerable<Diagnostics.AnalyzerReference> 
+            // ?additionalDocuments:IEnumerable<DocumentInfo> 
+            // ?isSubmission:bool 
+            // ?hostObjectType:Type
+        )
 
 //    let toProjectInfo (projectBlock:ProjectBlock) =
 //        ProjectInfo.
@@ -261,11 +279,14 @@ module SolutionFile =
     let load (path : string) = 
         use reader = new StringReader(File.ReadAllText path)
         parse path reader
-//    let toSolutionInfo (solutionFile:SolutionFile) =
-//        solutionFile.ProjectBlocks |> Array.map (fun x -> x.)
-//        SolutionInfo.Create
-//            (   SolutionId.CreateNewId()
-//            ,   VersionStamp.Create()
-//            ,   solutionFile.Path
-//            ,   solutionFile.ProjectBlocks)
-//
+
+    let toSolutionInfo (solutionFile: SolutionFile) : SolutionInfo =
+        let projectBlocks = solutionFile.ProjectBlocks |> Array.map ProjectBlock.toProjectInfo
+        
+        SolutionInfo.Create(
+            SolutionId.CreateNewId(),   
+            VersionStamp.Create(),
+            solutionFile.Path,
+            projectBlocks
+        )
+
