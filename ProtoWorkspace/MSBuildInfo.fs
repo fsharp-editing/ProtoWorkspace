@@ -59,13 +59,13 @@ type MSBuildLogForwarder(logger : ILogger, diagnostics : MSBuildDiagnosticsMessa
     
     interface Microsoft.Build.Framework.ILogger with
         member __.Initialize eventSource = self.Initialize eventSource
-        member x.Shutdown() = self.Shutdown()
+        member __.Shutdown() = self.Shutdown()
         
-        member x.Parameters 
+        member __.Parameters 
             with get () = self.Parameters
             and set v = self.Parameters <- v
         
-        member x.Verbosity 
+        member __.Verbosity 
             with get () = self.Verbosity
             and set v = self.Verbosity <- v
 

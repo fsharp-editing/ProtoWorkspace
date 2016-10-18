@@ -7,11 +7,11 @@ type ProjectSettings =
       ProjectFile : FileName
       TargetFramework : FSharpTargetFramework
       CompilerVersion : FSharpCompilerVersion option
-      CompilerOptions : string array
-      SourceFiles : FileName array
+      CompilerOptions : string []
+      SourceFiles : FileName []
       FullOutputFilePath : FileName option
-      References : FileName array
-      ProjectReferences : FileName array }
+      References : FileName []
+      ProjectReferences : FileName [] }
 
 type ProjectConfig = 
     | FsProject of ProjectSettings

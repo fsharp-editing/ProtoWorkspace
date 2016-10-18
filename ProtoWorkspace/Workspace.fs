@@ -1,20 +1,16 @@
 ﻿namespace ProtoWorkspace
 
 open System
-open System.Text
 open System.Reflection
 open System.Composition
 open System.Linq
 open System.Threading
 open System.IO
 open System.Collections.Generic
-open System.Collections.Concurrent
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Internal.Log
 
 type IHostServicesProvider = 
     abstract Assemblies : Assembly ImmutableArray
@@ -142,7 +138,7 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator : HostServicesAggregat
         self.CurrentSolution.GetDocument documentInfo.Id
     
     /// Adds a document to the workspace.
-    member self.AddDocument(projectId : ProjectId, name : string, text : SourceText) = 
+    member __.AddDocument(projectId : ProjectId, name : string, text : SourceText) = 
         checkNullArg projectId "projectId"
         checkNullArg name "name"
         checkNullArg text "text"

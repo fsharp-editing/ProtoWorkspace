@@ -3,11 +3,6 @@
 [<AutoOpen>]
 module Environment = 
     open System
-    open System.Diagnostics
-    open System.IO
-    open System.Configuration
-    open System.Runtime.InteropServices
-    open System.Text.RegularExpressions
     
     /// Are we running on the Mono platform?
     let runningOnMono = 
