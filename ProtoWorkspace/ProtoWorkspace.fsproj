@@ -53,7 +53,7 @@
     <Compile Include="Constants.fs" />
     <Compile Include="Utilities.fs" />
     <Compile Include="MSBuildInfo.fs" />
-    <Compile Include="ProjectInfo.fs" />
+    <Compile Include="ProjectFileInfo.fs" />
     <Compile Include="SolutionSystem.fs" />
     <Compile Include="BufferTracker.fs" />
     <Compile Include="FileSystem.fs" />
