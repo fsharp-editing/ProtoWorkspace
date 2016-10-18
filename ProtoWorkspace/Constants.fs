@@ -1,100 +1,192 @@
 ﻿module ProtoWorkspace.Constants
+
 open System
 
-
-let [<Literal>] FSharpProjectGuidStr = "F2A71F9B-5D33-465A-A702-920D77279786"
+[<Literal>]
+let FSharpProjectGuidStr = "F2A71F9B-5D33-465A-A702-920D77279786"
 
 let FSharpProjectGuid = Guid FSharpProjectGuidStr
 
-
 // Common Constants
-let [<Literal>] Name        = "Name"
-let [<Literal>] None        = "None"
-let [<Literal>] Reference   = "Reference"
+[<Literal>]
+let Name = "Name"
+
+[<Literal>]
+let None = "None"
+
+[<Literal>]
+let Reference = "Reference"
 
 // Platform Constants
+[<Literal>]
+let X86 = "x86"
 
-let [<Literal>] X86       = "x86"
-let [<Literal>] X64       = "x64"
-let [<Literal>] AnyCPU    = "AnyCPU"
+[<Literal>]
+let X64 = "x64"
+
+[<Literal>]
+let AnyCPU = "AnyCPU"
 
 // BuildAction Constants
+[<Literal>]
+let Compile = "Compile"
 
-let [<Literal>] Compile          = "Compile"
-let [<Literal>] Content          = "Content"
-let [<Literal>] Resource         = "Resource"
-let [<Literal>] EmbeddedResource = "EmbeddedResource"
+[<Literal>]
+let Content = "Content"
+
+[<Literal>]
+let Resource = "Resource"
+
+[<Literal>]
+let EmbeddedResource = "EmbeddedResource"
 
 // CopyToOutputDirectory Constants
-let [<Literal>] Never             = "Never"
-let [<Literal>] Always            = "Always"
-let [<Literal>] PreserveNewest    = "PreserveNewest"
+[<Literal>]
+let Never = "Never"
+
+[<Literal>]
+let Always = "Always"
+
+[<Literal>]
+let PreserveNewest = "PreserveNewest"
 
 // DebugType Constants
+[<Literal>]
+let PdbOnly = "PdbOnly"
 
-let [<Literal>] PdbOnly   = "PdbOnly"
-let [<Literal>] Full      = "Full"
-
+[<Literal>]
+let Full = "Full"
 
 // OutputType Constants
-let [<Literal>] Exe       = "Exe"
-let [<Literal>] Winexe    = "Winexe"
-let [<Literal>] Library   = "Library"
-let [<Literal>] Module    = "Module"
+[<Literal>]
+let Exe = "Exe"
 
+[<Literal>]
+let Winexe = "Winexe"
+
+[<Literal>]
+let Library = "Library"
+
+[<Literal>]
+let Module = "Module"
 
 // XML Attribute Name Constants
+[<Literal>]
+let DefaultTargets = "DefaultTargets"
 
-let [<Literal>] DefaultTargets  = "DefaultTargets"
-let [<Literal>] ToolsVersion    = "ToolsVersion"
-let [<Literal>] Include         = "Include"
-let [<Literal>] Condition       = "Condition"
+[<Literal>]
+let ToolsVersion = "ToolsVersion"
+
+[<Literal>]
+let Include = "Include"
+
+[<Literal>]
+let Condition = "Condition"
 
 // MSBuild XML Element Constants
+[<Literal>]
+let Project = "Project"
 
-let [<Literal>] Project          = "Project"
-let [<Literal>] ItemGroup        = "ItemGroup"
-let [<Literal>] PropertyGroup    = "PropertyGroup"
-let [<Literal>] ProjectReference = "ProjectReference"
+[<Literal>]
+let ItemGroup = "ItemGroup"
 
+[<Literal>]
+let PropertyGroup = "PropertyGroup"
+
+[<Literal>]
+let ProjectReference = "ProjectReference"
 
 // XML Property Constants (found in PropertyGroups)
+[<Literal>]
+let AssemblyName = "AssemblyName"
 
-let [<Literal>] AssemblyName                 = "AssemblyName"
-let [<Literal>] RootNamespace                = "RootNamespace"
-let [<Literal>] Configuration                = "Configuration"
-let [<Literal>] Platform                     = "Platform"
-let [<Literal>] SchemaVersion                = "SchemaVersion"
-let [<Literal>] ProjectGuid                  = "ProjectGuid"
-let [<Literal>] ProjectType                  = "ProjectType"
-let [<Literal>] OutputType                   = "OutputType"
-let [<Literal>] TargetFrameworkVersion       = "TargetFrameworkVersion"
-let [<Literal>] TargetFrameworkProfile       = "TargetFrameworkProfile"
-let [<Literal>] AutoGenerateBindingRedirects = "AutoGenerateBindingRedirects"
-let [<Literal>] TargetFSharpCoreVersion      = "TargetFSharpCoreVersion"
-let [<Literal>] DebugSymbols                 = "DebugSymbols"
-let [<Literal>] DebugType                    = "DebugType"
-let [<Literal>] Optimize                     = "Optimize"
-let [<Literal>] Tailcalls                    = "Tailcalls"
-let [<Literal>] OutputPath                   = "OutputPath"
-let [<Literal>] CompilationConstants         = "DefineConstants"
-let [<Literal>] WarningLevel                 = "WarningLevel"
-let [<Literal>] PlatformTarget               = "PlatformTarget"
-let [<Literal>] DocumentationFile            = "DocumentationFile"
-let [<Literal>] Prefer32Bit                  = "Prefer32Bit"
-let [<Literal>] OtherFlags                   = "OtherFlags"
+[<Literal>]
+let RootNamespace = "RootNamespace"
 
+[<Literal>]
+let Configuration = "Configuration"
+
+[<Literal>]
+let Platform = "Platform"
+
+[<Literal>]
+let SchemaVersion = "SchemaVersion"
+
+[<Literal>]
+let ProjectGuid = "ProjectGuid"
+
+[<Literal>]
+let ProjectType = "ProjectType"
+
+[<Literal>]
+let OutputType = "OutputType"
+
+[<Literal>]
+let TargetFrameworkVersion = "TargetFrameworkVersion"
+
+[<Literal>]
+let TargetFrameworkProfile = "TargetFrameworkProfile"
+
+[<Literal>]
+let AutoGenerateBindingRedirects = "AutoGenerateBindingRedirects"
+
+[<Literal>]
+let TargetFSharpCoreVersion = "TargetFSharpCoreVersion"
+
+[<Literal>]
+let DebugSymbols = "DebugSymbols"
+
+[<Literal>]
+let DebugType = "DebugType"
+
+[<Literal>]
+let Optimize = "Optimize"
+
+[<Literal>]
+let Tailcalls = "Tailcalls"
+
+[<Literal>]
+let OutputPath = "OutputPath"
+
+[<Literal>]
+let CompilationConstants = "DefineConstants"
+
+[<Literal>]
+let WarningLevel = "WarningLevel"
+
+[<Literal>]
+let PlatformTarget = "PlatformTarget"
+
+[<Literal>]
+let DocumentationFile = "DocumentationFile"
+
+[<Literal>]
+let Prefer32Bit = "Prefer32Bit"
+
+[<Literal>]
+let OtherFlags = "OtherFlags"
 
 // XML Elements
+[<Literal>]
+let CopyToOutputDirectory = "CopyToOutputDirectory"
 
-let [<Literal>] CopyToOutputDirectory   = "CopyToOutputDirectory"
-let [<Literal>] HintPath                = "HintPath"
-let [<Literal>] Private                 = "Private"
-let [<Literal>] SpecificVersion         = "SpecificVersion"
-let [<Literal>] Link                    = "Link"
-let [<Literal>] Paket                   = "Paket"
+[<Literal>]
+let HintPath = "HintPath"
 
-let [<Literal>] XmlDecl                 = @"<?xml version='1.0' encoding='utf-8'?>"
-let [<Literal>] Xmlns                   = "http://schemas.microsoft.com/developer/msbuild/2003"
+[<Literal>]
+let Private = "Private"
 
+[<Literal>]
+let SpecificVersion = "SpecificVersion"
 
+[<Literal>]
+let Link = "Link"
+
+[<Literal>]
+let Paket = "Paket"
+
+[<Literal>]
+let XmlDecl = @"<?xml version='1.0' encoding='utf-8'?>"
+
+[<Literal>]
+let Xmlns = "http://schemas.microsoft.com/developer/msbuild/2003"
