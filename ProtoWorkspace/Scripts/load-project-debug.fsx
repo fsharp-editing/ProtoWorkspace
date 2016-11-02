@@ -3,6 +3,7 @@
 #load "load-references-debug.fsx"
 #load "../Prelude.fs"
       "../Extensions.fs"
+      "../XLinq.fs"
       "../Environment.fs"
       "../Constants.fs"
       "../Utilities.fs"

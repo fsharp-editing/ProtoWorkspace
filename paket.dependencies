@@ -4,8 +4,6 @@ redirects: on
 
 nuget FSharp.Compiler.Service
 nuget FSharp.Core
-nuget Microsoft.Build.Framework
-nuget Microsoft.Build.Runtime
 nuget Microsoft.CodeAnalysis.Workspaces.Common
 nuget Microsoft.Extensions.Caching.Memory
 nuget Microsoft.Extensions.Configuration
@@ -16,3 +14,5 @@ nuget Microsoft.Extensions.PlatformAbstractions
 nuget System.Collections.Immutable
 nuget System.IO.FileSystem.Watcher
 nuget System.Threading.Thread
+
+

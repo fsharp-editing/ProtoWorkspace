@@ -10,5 +10,3 @@ Microsoft.Extensions.PlatformAbstractions
 Microsoft.Extensions.Logging.Console
 System.IO.FileSystem.Watcher
 System.Threading.Thread
-Microsoft.Build.Framework
-Microsoft.Build.Runtime
