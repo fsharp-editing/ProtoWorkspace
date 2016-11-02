@@ -34,42 +34,7 @@ let script1 = File.ReadAllText "../data/script_001.fsx"
 let srctxt = SourceText.From module1
 
 
-let private getNextNonEmptyLine (reader:TextReader) =
-    let rec getLine (line:string) =
-        if isNull line || line.Trim() = String.Empty then line else
-        getLine <| reader.ReadLine()
-    getLine <| reader.ReadLine()
-
-
-let testStr = """
-
-# skip me biatch
-
-    the first line
-"""
-
-
-
-let reader = new StringReader(testStr)
-
-
-//let rec getLines() = seq {
-//    // finish if not a commentline, empty line, or if it's the end of the file
-//    if reader.Peek() = -1 || not (Array.contains (reader.Peek()|>char) [|'#';'\r';'\n'|]) then () else
-//    if reader.Peek() = -1 then () else
-//    yield reader.ReadLine()
-//    yield! getLines()
-//}
-//;;
-//getLines() |> Seq.iter (printfn "%s")
-
-let readSln filePath =
-    use stream = File.OpenRead filePath
-    use reader = new StreamReader(stream)
-    SolutionFile.parse reader
-;;
-
-(readSln testSlnPath).ToString()
+(SolutionFile.load testSlnPath).ToString()
 
 
 (*

@@ -8,3 +8,6 @@ type IProjectSystem =
     abstract Extensions : string seq
     abstract Initialize : Configuration:IConfiguration -> unit
 
+
+
+// NOTE - Maybe use the msbuildprojectloader for this?

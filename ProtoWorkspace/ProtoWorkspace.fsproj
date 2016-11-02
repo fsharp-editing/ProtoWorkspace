@@ -56,10 +56,12 @@
     <Compile Include="BufferTracker.fs" />
     <Compile Include="FileSystem.fs" />
     <Compile Include="ProjectConfig.fs" />
+    <Compile Include="HostServices.fs" />
     <Compile Include="Workspace.fs" />
     <Compile Include="MSBuildProjectSystem.fs" />
     <None Include="Script.fsx" />
     <None Include="Script1.fsx" />
+    <None Include="CodeService.fsx" />
     <None Include="slntest.fsx" />
     <None Include="Scripts\load-references-release.fsx" />
     <None Include="Scripts\load-project-release.fsx" />

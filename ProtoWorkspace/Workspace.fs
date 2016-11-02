@@ -11,6 +11,7 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host.Mef
+open ProtoWorkspace.HostServices
 
 type IHostServicesProvider = 
     abstract Assemblies : Assembly ImmutableArray
@@ -66,40 +67,40 @@ type ChangeBufferRequest =
       NewText : string }
 
 module Workspace = 
-    let convertTextChanges (document : Document) (changes : TextChange seq) = 
-        async { 
-            let! text = document.GetTextAsync() |> Async.AwaitTask
-            return changes
-                   |> Seq.sortByDescending (fun change -> change.Span.Start)
-                   |> Seq.map (fun change -> 
-                          let span = change.Span
-                          let newText = change.NewText
+    let convertTextChanges (document : Document) (changes : TextChange seq) = async { 
+        let! text = document.GetTextAsync() |> Async.AwaitTask
+        return changes
+        |> Seq.sortByDescending (fun change -> change.Span.Start)
+        |> Seq.map (fun change -> 
+            let span = change.Span
+            let newText = change.NewText
                           
-                          let prefix, postfix, span = 
-                              if newText.Length > 0 then 
-                                  // Roslyn computes text changes on character arrays. So it might happen that a
-                                  // change starts inbetween \r\n which is OK when you are offset-based but a problem
-                                  // when you are line,column-based. This code extends text edits which just overlap
-                                  // a with a line break to its full line break
-                                  if span.Start > 0 && newText.[0] = '\n' && text.[span.Start - 1] = '\r' then 
-                                      // text: foo\r\nbar\r\nfoo
-                                      // edit:      [----)
-                                      "\r", "", TextSpan.FromBounds(span.Start - 1, span.End)
-                                  elif span.End < text.Length - 1 && text.[span.End] = '\n' 
-                                       && newText.[newText.Length - 1] = '\r' then 
-                                      // text: foo\r\nbar\r\nfoo
-                                      // edit:        [----)
-                                      "", "\n", TextSpan.FromBounds(span.Start, span.End + 1)
-                                  else "", "", span
-                              else "", "", span
+            let prefix, postfix, span = 
+                if newText.Length > 0 then 
+                    // Roslyn computes text changes on character arrays. So it might happen that a
+                    // change starts inbetween \r\n which is OK when you are offset-based but a problem
+                    // when you are line,column-based. This code extends text edits which just overlap
+                    // a with a line break to its full line break
+                    if span.Start > 0 && newText.[0] = '\n' && text.[span.Start - 1] = '\r' then 
+                        // text: foo\r\nbar\r\nfoo
+                        // edit:      [----)
+                        "\r", "", TextSpan.FromBounds(span.Start - 1, span.End)
+                    elif span.End < text.Length - 1 && text.[span.End] = '\n' 
+                        && newText.[newText.Length - 1] = '\r' then 
+                        // text: foo\r\nbar\r\nfoo
+                        // edit:        [----)
+                        "", "\n", TextSpan.FromBounds(span.Start, span.End + 1)
+                    else "", "", span
+                else "", "", span
                           
-                          let linePositionSpan = text.Lines.GetLinePositionSpan span
-                          { NewText = prefix + newText + postfix
-                            StartLine = linePositionSpan.Start.Line
-                            StartColumn = linePositionSpan.Start.Character
-                            EndLine = linePositionSpan.End.Line
-                            EndColumn = linePositionSpan.End.Character } : LinePositionSpanTextChange)
-        }
+            let linePositionSpan = text.Lines.GetLinePositionSpan span
+            {   NewText = prefix + newText + postfix
+                StartLine = linePositionSpan.Start.Line
+                StartColumn = linePositionSpan.Start.Character
+                EndLine = linePositionSpan.End.Line
+                EndColumn = linePositionSpan.End.Character 
+            } : LinePositionSpanTextChange)
+    }
     
     let findProjectsByFileName (filename : string) (workspace : Workspace) = 
         let dirInfo = (FileInfo filename).Directory
@@ -119,15 +120,27 @@ module Workspace =
         loop dirInfo Seq.empty
 
 open Workspace
+(*
+    This header is based off of omnisharp-roslyn
+    It may be necessary to go back to this in the future,
+    but at the moment a simplified version is being used to build up from
 
 [<Export; Shared>]
 type FSharpWorkspace [<ImportingConstructor>] (aggregator : HostServicesAggregator) as self = 
     inherit Workspace(aggregator.CreateHostServices(), "FSharp")
+*)
+
+
+type FSharpWorkspace () as self = 
+//    inherit Workspace(MefHostServices.DefaultHost, "FSharp")
+    inherit Workspace(FSharpHostService(), "FSharp")
     let bufferManager = new BufferManager(self)
     let disposables = ResizeArray<IDisposable>()
-    do disposables.Add bufferManager
+    do 
+        disposables.Add bufferManager
+        
     //let activeDocuments = HashSet<DocumentId>()
-    new() = new FSharpWorkspace(HostServicesAggregator(Seq.empty))
+    //new() = new FSharpWorkspace(HostServicesAggregator(Seq.empty))
     override __.CanOpenDocuments = true
     override __.CanApplyChange _ = true
     
@@ -145,7 +158,8 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator : HostServicesAggregat
         DocumentInfo.Create
             (DocumentId.CreateNewId projectId, name, 
              loader = TextLoader.From(TextAndVersion.Create(text, VersionStamp.Create())))
-    
+   
+   
     /// Puts the specified document into the open state.
     override __.OpenDocument(docId, activate) = 
         let doc = base.CurrentSolution.GetDocument docId
@@ -156,7 +170,16 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator : HostServicesAggregat
             let text = task.Result
             base.OnDocumentOpened(docId, text.Container, activate)
     
+    ///<summary>
+    ///<para> this </para>
+    ///<para> is unfortunately </para>
+    ///<para> the only way to get </para>
+    ///<para> newlines </para>
+    /// and the tage for <code>let x = 10</code>
+    /// doesn't work in either form <c>let x = 10</c>
     /// Puts the specified document into the closed state.
+    ///</summary>
+    ///<param name="docId"> The Id of the document to close</param> 
     override __.CloseDocument docId = 
         let doc = base.CurrentSolution.GetDocument docId
         if isNull doc then ()
@@ -177,9 +200,10 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator : HostServicesAggregat
         base.UpdateReferencesAfterAdd()
         self.CurrentSolution.GetProject projectInfo.Id
     
-    /// Adds a project to the workspace. All previous projects remain intact.
-    member self.AddProject(name : string) = 
-        ProjectInfo.Create(ProjectId.CreateNewId(), VersionStamp.Create(), name, name, "FSharp") |> self.AddProject
+//    /// Adds a project to the workspace. All previous projects remain intact.
+//    member self.AddProject(name : string) = 
+//        ProjectInfo.Create(ProjectId.CreateNewId(), VersionStamp.Create(), name, name, "FSharp") 
+//        |> self.AddProject
     
     /// Adds multiple projects to the workspace at once. All existing projects remain intact.
     member self.AddProjects(projectInfos : seq<_>) = 
@@ -236,57 +260,54 @@ and internal BufferManager(workspace : FSharpWorkspace) as self =
     let tryAddTransientDocument (fileName : string) (fileContent : string) = 
         if String.IsNullOrWhiteSpace fileName then false
         else 
-            let projects = findProjectsByFileName fileName workspace
-            if projects.Count() = 0 then false
-            else 
-                let sourceText = SourceText.From fileContent
+        let projects = findProjectsByFileName fileName workspace
+        if projects.Count() = 0 then false
+        else 
+        let sourceText = SourceText.From fileContent
                 
-                let documents : DocumentInfo list = 
-                    (projects, []) ||> Seq.foldBack (fun project docs -> 
-                                           let docId = DocumentId.CreateNewId project.Id
-                                           let version = VersionStamp.Create()
-                                           let docInfo = 
-                                               DocumentInfo.Create
-                                                   (docId, fileName, filePath = fileName, 
-                                                    loader = TextLoader.From(TextAndVersion.Create(sourceText, version)))
-                                           docInfo :: docs)
-                lock lockObj (fun () -> 
-                    let docIds = documents |> List.map (fun doc -> doc.Id)
-                    transientDocuments.Add(fileName, docIds)
-                    transientDocumentIds.UnionWith docIds)
-                documents |> List.iter (fun doc -> workspace.AddDocument doc |> ignore)
-                true
+        let documents : DocumentInfo list = 
+            (projects, []) ||> Seq.foldBack (fun project docs -> 
+                let docId = DocumentId.CreateNewId project.Id
+                let version = VersionStamp.Create()
+                let docInfo = 
+                    DocumentInfo.Create
+                        (docId, fileName, filePath = fileName, 
+                        loader = TextLoader.From(TextAndVersion.Create(sourceText, version)))
+                docInfo :: docs)
+        lock lockObj (fun () -> 
+            let docIds = documents |> List.map (fun doc -> doc.Id)
+            transientDocuments.Add(fileName, docIds)
+            transientDocumentIds.UnionWith docIds)
+        documents |> List.iter (fun doc -> workspace.AddDocument doc |> ignore)
+        true
     
-    member __.UpdateBuffer(request : Request) = 
-        async { 
-            let buffer = 
-                if request.FromDisk then File.ReadAllText request.FileName
-                else request.Buffer
+    member __.UpdateBuffer(request : Request) = async { 
+        let buffer = 
+            if request.FromDisk then File.ReadAllText request.FileName
+            else request.Buffer
             
-            let changes = request.Changes
-            let documentIds = workspace.CurrentSolution.GetDocumentIdsWithFilePath request.FileName
-            if not documentIds.IsEmpty then 
-                if changes = [] then 
-                    let sourceText = SourceText.From buffer
-                    documentIds |> Seq.iter (fun docId -> workspace.OnDocumentChanged(docId, sourceText))
-                else 
-                    for docId in documentIds do
-                        let doc = workspace.CurrentSolution.GetDocument docId
-                        let! sourceText = doc.GetTextAsync() |> Async.AwaitTask
-                        let sourceText = 
-                            (sourceText, changes) 
-                            ||> List.fold 
-                                    (fun sourceText change -> 
-                                    let startOffset = 
-                                        sourceText.Lines.GetPosition(LinePosition(change.StartLine, change.StartLine))
-                                    let endOffset = 
-                                        sourceText.Lines.GetPosition(LinePosition(change.EndLine, change.EndColumn))
-                                    sourceText.WithChanges 
-                                        [| TextChange(TextSpan(startOffset, endOffset - startOffset), change.NewText) |])
-                        workspace.OnDocumentChanged(docId, sourceText)
+        let changes = request.Changes
+        let documentIds = workspace.CurrentSolution.GetDocumentIdsWithFilePath request.FileName
+        if not documentIds.IsEmpty then 
+            if changes = [] then 
+                let sourceText = SourceText.From buffer
+                documentIds |> Seq.iter (fun docId -> workspace.OnDocumentChanged(docId, sourceText))
             else 
-                if not (isNull buffer) then tryAddTransientDocument request.FileName buffer |> ignore
-        }
+            for docId in documentIds do
+                let doc = workspace.CurrentSolution.GetDocument docId
+                let! sourceText = doc.GetTextAsync() |> Async.AwaitTask
+                let sourceText = 
+                    (sourceText, changes) ||> List.fold (fun sourceText change -> 
+                        let startOffset = 
+                            sourceText.Lines.GetPosition(LinePosition(change.StartLine, change.StartLine))
+                        let endOffset = 
+                            sourceText.Lines.GetPosition(LinePosition(change.EndLine, change.EndColumn))
+                        sourceText.WithChanges 
+                            [| TextChange(TextSpan(startOffset, endOffset - startOffset), change.NewText) |])
+                workspace.OnDocumentChanged(docId, sourceText)
+        else 
+        if not (isNull buffer) then tryAddTransientDocument request.FileName buffer |> ignore
+    }
     
     member __.UpdateChangeBuffer(request : ChangeBufferRequest) = 
         async { 

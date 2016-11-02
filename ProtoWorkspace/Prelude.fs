@@ -28,7 +28,7 @@ let (|EqualsIC|_|) (str : string) arg =
     else None
 
 /// Null coalescing operator
-let (<?>) a b = 
+let (/?) a b = 
     if isNull a then b
     else a
 
@@ -382,3 +382,54 @@ module PropertyConverter =
 
 
 
+
+type internal Assert() = 
+    /// Display a good exception for this error message and then rethrow.
+    static member Exception(e:Exception) =  
+        System.Diagnostics.Debug.Assert(false, "Unexpected exception seen in language service", e.ToString())
+
+module internal CommonRoslynHelpers =
+    open System
+    open System.Collections.Immutable
+    open System.Threading.Tasks
+    open Microsoft.CodeAnalysis
+    open Microsoft.CodeAnalysis.Text
+    open Microsoft.FSharp.Compiler
+    open Microsoft.FSharp.Compiler.SourceCodeServices
+    open Microsoft.FSharp.Compiler.Range
+
+    let fsharpRangeToTextSpan(sourceText: SourceText, range: range) =
+        // Roslyn TextLineCollection is zero-based, F# range lines are one-based
+        let startPosition = sourceText.Lines.[range.StartLine - 1].Start + range.StartColumn
+        let endPosition = sourceText.Lines.[range.EndLine - 1].Start + range.EndColumn
+        TextSpan(startPosition, endPosition - startPosition)
+
+    let getTaskAction(computation: Async<unit>) =
+        // Shortcut due to nonstandard way of converting Async<unit> to Task
+        let action() =
+            try
+                computation |> Async.RunSynchronously
+            with ex ->
+                Assert.Exception(ex.GetBaseException())
+                raise(ex.GetBaseException())
+        Action action
+
+    let getCompletedTaskResult(task: Task<'TResult>) =
+        if task.Status = TaskStatus.RanToCompletion then
+            task.Result
+        else
+            Assert.Exception(task.Exception.GetBaseException())
+            raise(task.Exception.GetBaseException())
+
+    let supportedDiagnostics() =
+        // We are constructing our own descriptors at run-time. Compiler service is already doing error formatting and localization.
+        let dummyDescriptor = DiagnosticDescriptor("0", String.Empty, String.Empty, String.Empty, DiagnosticSeverity.Error, true, null, null)
+        ImmutableArray.Create<DiagnosticDescriptor>(dummyDescriptor)
+
+    let convertError(error: FSharpErrorInfo, location: Location) =
+        let id = "FS" + error.ErrorNumber.ToString("0000")
+        let emptyString = LocalizableString.op_Implicit("")
+        let description = LocalizableString.op_Implicit(error.Message)
+        let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
+        let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, null)
+        Diagnostic.Create(descriptor, location)

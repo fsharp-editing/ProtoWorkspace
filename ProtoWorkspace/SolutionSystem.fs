@@ -161,6 +161,8 @@ type SolutionFile =
       ProjectBlocks : ProjectBlock []
       GlobalSectionBlocks : SectionBlock [] }
 
+// NOTE - I'm not a fan of this parsing approach, 
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix); RequireQualifiedAccess>]
 module SolutionFile = 
     let getText (sln : SolutionFile) = 
@@ -187,9 +189,7 @@ module SolutionFile =
         getLine <| reader.ReadLine()
     
     let private consumeEmptyLines (reader : TextReader) = 
-        while reader.Peek() <> -1 && "\r\n".Contains(reader.Peek()
-                                                     |> char
-                                                     |> string) do
+        while reader.Peek() <> -1 && "\r\n".Contains(reader.Peek()|> char|> string) do
             reader.ReadLine() |> ignore
     
     let inline private parseError expected actual = 
@@ -201,20 +201,20 @@ module SolutionFile =
     let private parseGlobal (reader : TextReader) : SectionBlock [] = 
         if reader.Peek() = -1 then [||]
         else 
-            let firstline = getNextNonEmptyLine reader
-            printfn "%s" firstline
-            parseCheck "Global" firstline
-            let rec getBlocks() = 
-                [| if reader.Peek() = -1 || not (Char.IsWhiteSpace(reader.Peek() |> char)) then ()
-                   else 
-                       yield SectionBlock.parse reader
-                       yield! getBlocks() |]
+        let firstline = getNextNonEmptyLine reader
+        printfn "%s" firstline
+        parseCheck "Global" firstline
+        let rec getBlocks() = 
+            [|  if reader.Peek() = -1 || not (Char.IsWhiteSpace(reader.Peek() |> char)) then ()
+                else 
+                yield SectionBlock.parse reader
+                yield! getBlocks() |]
             
-            let globalSectionBlocks = getBlocks()
-            printfn "%A" globalSectionBlocks
-            parseCheck "EndGlobal" (getNextNonEmptyLine reader)
-            consumeEmptyLines reader
-            globalSectionBlocks
+        let globalSectionBlocks = getBlocks()
+        printfn "%A" globalSectionBlocks
+        parseCheck "EndGlobal" (getNextNonEmptyLine reader)
+        consumeEmptyLines reader
+        globalSectionBlocks
     
     let private parse path (reader : TextReader) = 
         let headerLine1 = getNextNonEmptyLine reader
@@ -223,11 +223,11 @@ module SolutionFile =
         /// skip comment lines and empty lines
         let rec getLines() = 
             [| // finish if not a commentline, empty line, or if it's the end of the file
-               if reader.Peek() = -1 || not (Array.contains (reader.Peek() |> char) [| '#'; '\r'; '\n' |]) then ()
-               else if reader.Peek() = -1 then ()
-               else 
-                   yield reader.ReadLine()
-                   yield! getLines() |]
+                if reader.Peek() = -1 || not (Array.contains (reader.Peek() |> char) [| '#'; '\r'; '\n' |]) then ()
+                else if reader.Peek() = -1 then ()
+                else 
+                yield reader.ReadLine()
+                yield! getLines() |]
         
         let hl = getLines()
         let headerLines = Array.append [| headerLine1 |] hl
@@ -249,12 +249,12 @@ module SolutionFile =
         
         // Parse project blocks while we have them
         let rec getBlocks() = 
-            [| if char (reader.Peek()) <> 'P' then ()
-               else 
-                   yield ProjectBlock.parse reader
-                   // Comments and Empty Lines between the Project Blocks are skipped
-                   getLines() |> ignore
-                   yield! getBlocks() |]
+            [|  if char (reader.Peek()) <> 'P' then ()
+                else 
+                yield ProjectBlock.parse reader
+                // Comments and Empty Lines between the Project Blocks are skipped
+                getLines() |> ignore
+                yield! getBlocks() |]
         
         // Parse project blocks while we have them
         let projectBlocks = getBlocks()
