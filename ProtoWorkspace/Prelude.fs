@@ -28,9 +28,16 @@ let (|EqualsIC|_|) (str : string) arg =
     else None
 
 /// Null coalescing operator
-let (/?) a b = 
-    if isNull a then b
-    else a
+let (/?) a b = if isNull a then b else a
+
+let (^) = (<|)
+
+let inline (|?|) (pred1:'a->bool) (pred2:'a->bool)  =
+    fun a -> pred1 a || pred2 a
+
+let inline (|&|) (pred1:'a->bool) (pred2:'a->bool)  =
+    fun a -> pred1 a && pred2 a
+
 
 /// If arg is null raise an `ArgumentNullException` with the argname
 let inline checkNullArg arg argName = 
