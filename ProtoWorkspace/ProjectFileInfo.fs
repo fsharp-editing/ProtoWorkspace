@@ -9,7 +9,10 @@ open Microsoft.Extensions.Logging
 open Microsoft.Build
 open Microsoft.Build.Evaluation
 open Microsoft.Build.Execution
+open System.Xml
+open System.Xml.Linq
 open ProtoWorkspace.MSBuildInfo
+open ProtoWorkspace.XLinq
 
 /// Specifies the version of the F# compiler that should be used
 type LanguageVersion = 
@@ -76,23 +79,25 @@ type OutputType =
         | EqualsIC Constants.Module -> Some Module
         | _ -> None
 
-type ProjectFileInfo = 
-    { ProjectId : ProjectId
-      ProjectGuid : Guid
-      Name : string
-      ProjectFilePath : string
-      TargetFramework : FrameworkName
-      AssemblyName : string
-      TargetPath : string
-      OutputType : OutputType
-      SignAssembly : bool
-      AssemblyOriginatorKeyFile : string
-      GenerateXmlDocumentation : string
-      PreprocessorySymbolNames : string ResizeArray
-      SourceFiles : string ResizeArray
-      References : string ResizeArray
-      ProjectReferences : string ResizeArray
-      Analyzers : string ResizeArray }
+type ProjectFileInfo = { 
+    ProjectId                 : ProjectId
+    ProjectGuid               : Guid option
+    Name                      : string
+    ProjectFilePath           : string
+    TargetFramework           : FrameworkName Option
+    AssemblyName              : string
+    TargetPath                : string
+    OutputType                : OutputType
+    SignAssembly              : bool
+    AssemblyOriginatorKeyFile : string
+    GenerateXmlDocumentation  : string
+    PreprocessorySymbolNames  : string ResizeArray
+    SourceFiles               : string ResizeArray
+    References                : string ResizeArray
+    ProjectReferences         : string ResizeArray
+//    ProjectReferences         : ProjectFileInfo ResizeArray
+    Analyzers                 : string ResizeArray 
+} with
     (* Unsure how to convert these
     public LanguageVersion SpecifiedLanguageVersion { get; }
 *)
@@ -156,9 +161,9 @@ module ProjectFileInfo =
         
         {   ProjectFilePath = projectFilePath
             ProjectId = ProjectId.CreateNewId()
-            ProjectGuid = PropertyConverter.toGuid <| projectInstance.GetPropertyValue PropertyNames.ProjectGuid
+            ProjectGuid = projectInstance.GetPropertyValue PropertyNames.ProjectGuid |> PropertyConverter.toGuid |> Some
             Name = projectInstance.GetPropertyValue PropertyNames.ProjectName
-            TargetFramework = FrameworkName(projectInstance.GetPropertyValue PropertyNames.TargetFrameworkMoniker)
+            TargetFramework = FrameworkName(projectInstance.GetPropertyValue PropertyNames.TargetFrameworkMoniker)|> Some
             AssemblyName = projectInstance.GetPropertyValue PropertyNames.AssemblyName
             TargetPath = projectInstance.GetPropertyValue PropertyNames.TargetPath
             OutputType = OutputType.Parse <| projectInstance.GetPropertyValue PropertyNames.OutputType
@@ -172,6 +177,7 @@ module ProjectFileInfo =
             SourceFiles = sourceFiles
             References = references
             ProjectReferences = projectReferences
+//            ProjectReferences = ResizeArray()
             Analyzers = analyzers 
         }
 
@@ -185,7 +191,8 @@ module ProjectFileInfo =
             ]
         let collection = new ProjectCollection(globalProperties)
         let project : Project = collection.LoadProject projectFilePath
-        
+        project.GlobalProperties.Add("BuildingInsideVisualStudio", "true")
+
         let projectInstance = project.CreateProjectInstance()
         
         // if not buildResult then null else
@@ -213,9 +220,9 @@ module ProjectFileInfo =
         
         {   ProjectFilePath = projectFilePath
             ProjectId = ProjectId.CreateNewId()
-            ProjectGuid = PropertyConverter.toGuid <| projectInstance.GetPropertyValue PropertyNames.ProjectGuid
+            ProjectGuid = projectInstance.GetPropertyValue PropertyNames.ProjectGuid |> PropertyConverter.toGuid |> Some
             Name = projectInstance.GetPropertyValue PropertyNames.ProjectName
-            TargetFramework = FrameworkName(projectInstance.GetPropertyValue PropertyNames.TargetFrameworkMoniker)
+            TargetFramework = FrameworkName(projectInstance.GetPropertyValue PropertyNames.TargetFrameworkMoniker) |> Some
             AssemblyName = projectInstance.GetPropertyValue PropertyNames.AssemblyName
             TargetPath = projectInstance.GetPropertyValue PropertyNames.TargetPath
             OutputType = OutputType.Parse <| projectInstance.GetPropertyValue PropertyNames.OutputType
@@ -229,15 +236,140 @@ module ProjectFileInfo =
             SourceFiles = sourceFiles
             References = references
             ProjectReferences = projectReferences
+//            ProjectReferences = ResizeArray()
             Analyzers = analyzers 
         }
+
+
+    // this is a temporary approach due to msbuild issues, it will need to be replaced with an msbuild approach later
+    let fromXDoc projectFilePath = 
+        let rec generate projectFilePath =
+            let projectDir = Path.GetDirectoryName projectFilePath
+            let workingDir = System.Environment.CurrentDirectory
+
+            let xdoc = projectFilePath |> File.ReadAllText |> XDocument.Parse
+            let xdoc = xdoc.Root
+
+            let filterElems elemName xdoc =
+                xdoc |> XElem.elements
+                |> Seq.filter (XElem.isNamed elemName)
+
+
+            let itemGroupElems = filterElems "ItemGroup" xdoc 
+            
+            let propertyGroupElems = 
+                filterElems "PropertyGroup" xdoc 
+                |> Seq.collect XElem.elements
+
+            let projectReferenceElems = filterElems  "ProjectReference" xdoc
+              
+            let collectInculdeAttr elemName xelemsqs : string seq =
+                xelemsqs |> Seq.collect (filterElems elemName)
+                |> Seq.choose (XElem.tryGetAttributeValue "Include") 
+        
+            let sourceFiles = 
+                collectInculdeAttr "Compile"  itemGroupElems 
+                |> ResizeArray
+
+            let references = 
+                collectInculdeAttr "Reference"  itemGroupElems 
+                |> ResizeArray
+        
+
+            let projectReferences = 
+                System.IO.Directory.SetCurrentDirectory projectDir
+                let projectPaths = 
+                    projectReferenceElems 
+                    |> Seq.map (XElem.getAttributeValue "Include" >> Path.GetDirectoryName)                
+                System.IO.Directory.SetCurrentDirectory workingDir
+                projectPaths 
+                //|> Seq.map generate
+                |> ResizeArray
+
+            let analyzers = 
+                collectInculdeAttr "Analyzer"  itemGroupElems 
+                |> ResizeArray
+        
+
+            let getProperty propName = 
+                propertyGroupElems 
+                |> Seq.tryFind (XElem.isNamed propName) 
+                |> function  Some x -> XElem.value x | None -> String.Empty
+            
+
+            let projectGuid = 
+                getProperty "ProjectGuid" 
+                |> fun x -> 
+                    try PropertyConverter.toGuid x |> Some
+                    with _ -> None
+            
+
+            {   ProjectFilePath = projectFilePath
+                ProjectId = ProjectId.CreateNewId()
+                ProjectGuid = projectGuid
+                Name = getProperty "Name"
+                TargetFramework = None
+                AssemblyName = getProperty "AssemblyName"
+                TargetPath = getProperty "OutputPath"
+                OutputType = getProperty "OutputType" |> OutputType.Parse 
+                SignAssembly =  getProperty "SignAssembly" |> PropertyConverter.toBoolean
+                AssemblyOriginatorKeyFile = String.Empty
+                GenerateXmlDocumentation = String.Empty
+                PreprocessorySymbolNames = 
+                    getProperty "DefineConstants"
+                    |> PropertyConverter.toDefineConstants
+                    |> ResizeArray
+                SourceFiles = sourceFiles
+                References = references
+                ProjectReferences = projectReferences
+                Analyzers = analyzers 
+            }
+        generate projectFilePath 
     
+
+    let inline private createDocs projectId (docpaths: #seq<string>) srcCodeKind =
+        docpaths |> Seq.map (fun path ->  
+            DocumentInfo.Create
+                (   DocumentId.CreateNewId projectId
+                ,   Path.GetFileNameWithoutExtension path
+                ,   sourceCodeKind=srcCodeKind
+                ,   filePath = path  
+                )
+        )
+
+    let createSrcDocInfo projectId (docpaths: #seq<string>) =
+        createDocs projectId docpaths SourceCodeKind.Regular
+            
+    let createScriptDocInfo projectId docpaths =
+        createDocs projectId docpaths SourceCodeKind.Script
+
+
     /// Converts into the Microsoft.CodeAnalysis ProjectInfo used by workspaces
     let toProjectInfo (projectFileInfo : ProjectFileInfo) = 
         ProjectInfo.Create
-            (projectFileInfo.ProjectId, VersionStamp.Create(), projectFileInfo.Name, projectFileInfo.AssemblyName, 
-             "FSharp", projectFileInfo.ProjectFilePath)
-
+            (   projectFileInfo.ProjectId
+            ,   VersionStamp.Create()
+            ,   projectFileInfo.Name
+            ,   projectFileInfo.AssemblyName
+            ,   "FSharp"
+            ,   projectFileInfo.ProjectFilePath
+            ,   outputFilePath=projectFileInfo.TargetPath
+            (*  - TODO -
+                Correctly adding projectreferences is going to be an issue
+                ProjectReference is created using a project id, which means a collection of
+                projectFileInfos should be passed to this function to prevent the creation
+                of duplicate projectfile infos for referenced projects that have different ids            
+            *)
+            ,   projectReferences=seq[]
+            ,   metadataReferences=seq[]
+            ,   analyzerReferences=seq[]
+            ,   documents = createSrcDocInfo projectFileInfo.ProjectId projectFileInfo.SourceFiles
+            ,   additionalDocuments=seq[]
+            //,   compilationOptions=
+            //,   parseOptions=
+            //,   isSubmission=
+            //,   hostObjectType=
+            )
 
 
     open Microsoft.FSharp.Compiler.SourceCodeServices

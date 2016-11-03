@@ -1,9 +1,12 @@
 
 
 ## Get Project and Solution Model Operational
+- [ ] Figure out how to prevent the recursive generation of duplicate projectfileInfo, projectInfo
+      and FSharpProjectOptions
 
+- [ ] Expand `ProjectFileInfo` to store the paths for script files and use these to create
+      the additional documents when generating a `ProjectInfo`
 
-- [ ] 
 
 
 ## Wire Up Workspace

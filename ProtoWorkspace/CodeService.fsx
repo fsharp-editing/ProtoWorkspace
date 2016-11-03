@@ -8,31 +8,44 @@ open System.IO
 open System.Collections.Generic
 open Microsoft.CodeAnalysis
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open ProtoWorkspace
 open Microsoft.Build
 open Microsoft.Build.Framework
 open Microsoft.Build.Evaluation
+open Microsoft.Build.Execution
+open Microsoft.Build.Utilities
+open System.Xml
+open System.Xml.Linq
+open ProtoWorkspace
+open ProtoWorkspace.XLinq
+
 
 let printsq sqs = sqs |> Seq.iter (printfn "%A")
 
-let library1path = "data/projects/Library1/Library1.fsproj" |> Path.GetFullPath
-let library2path = "data/projects/Library2/Library2.fsproj" |> Path.GetFullPath
 
-let p = Project(library1path)
+let library1path = "../data/projects/Library1/Library1.fsproj" |> Path.GetFullPath
+let library2path = "../data/projects/Library2/Library2.fsproj" |> Path.GetFullPath
 
-let lib1info = (ProjectFileInfo.create2 library1path) |> ProjectFileInfo.toProjectInfo
 
-let checker = FSharpChecker.Create()
+let xdoc = (library1path |> File.ReadAllText |> XDocument.Parse).Root
+
+let lib1info = (ProjectFileInfo.fromXDoc library1path) |> ProjectFileInfo.toProjectInfo
 
 let fswork = new FSharpWorkspace()
 ;;
 printsq fswork.Services.SupportedLanguages
 ;;
-//fswork.Services.GetLanguageServices "FSharp"
-;;
 let lib1proj = fswork.AddProject lib1info
 ;;
-printsq lib1proj.Documents 
-;;
+lib1proj.Documents
+|> Seq.iter (fun doc -> printfn "%s - %s" doc.Name doc.FilePath)
 
-lib1proj.DocumentIds
+// Below is for the MsBuild Approach
+
+//System.Environment.SetEnvironmentVariable("MSBUILD_EXE_PATH","../packages/MSBuild/runtimes/any/native/MSBuild.exe")
+
+//let collection = new ProjectCollection()
+////collection.GlobalProperties.Add("BuildingInsideVisualStudio", "true")
+//collection.SetGlobalProperty("BuildingInsideVisualStudio", "true")
+//
+//collection.DefaultToolsVersion <- "14.0"
+//let proj = Project(library1path,null,null,collection,ProjectLoadSettings.IgnoreMissingImports)

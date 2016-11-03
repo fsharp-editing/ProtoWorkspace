@@ -341,6 +341,7 @@ module PropertyConverter =
     
     // TODO - railway this
     let toBoolean propertyValue = 
+        if propertyValue = String.Empty then false else 
         match Boolean.TryParse propertyValue with
         | true, value -> value
         | _ -> failwithf "Couldn't parse '%s' into a Boolean" propertyValue
