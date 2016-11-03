@@ -327,21 +327,25 @@ module ProjectFileInfo =
         generate projectFilePath 
     
 
-    let inline private createDocs projectId (docpaths: #seq<string>) srcCodeKind =
-        docpaths |> Seq.map (fun path ->  
+    let inline private createDocs projectFileInfo srcCodeKind =
+        
+        projectFileInfo.SourceFiles |> Seq.map (fun path ->  
+            let fullpath = Path.Combine(projectFileInfo.ProjectDirectory,path)
             DocumentInfo.Create
-                (   DocumentId.CreateNewId projectId
+                (   DocumentId.CreateNewId projectFileInfo.ProjectId
                 ,   Path.GetFileNameWithoutExtension path
                 ,   sourceCodeKind=srcCodeKind
-                ,   filePath = path  
+                ,   filePath = fullpath
+                ,   loader=FileTextLoader(fullpath,Text.Encoding.UTF8)
+                ,   isGenerated=false
                 )
         )
 
-    let createSrcDocInfo projectId (docpaths: #seq<string>) =
-        createDocs projectId docpaths SourceCodeKind.Regular
+    let createSrcDocInfo projectFileInfo =
+        createDocs projectFileInfo SourceCodeKind.Regular
             
-    let createScriptDocInfo projectId docpaths =
-        createDocs projectId docpaths SourceCodeKind.Script
+    let createScriptDocInfo projectFileInfo =
+        createDocs projectFileInfo SourceCodeKind.Script
 
 
     /// Converts into the Microsoft.CodeAnalysis ProjectInfo used by workspaces
@@ -363,7 +367,7 @@ module ProjectFileInfo =
             ,   projectReferences=seq[]
             ,   metadataReferences=seq[]
             ,   analyzerReferences=seq[]
-            ,   documents = createSrcDocInfo projectFileInfo.ProjectId projectFileInfo.SourceFiles
+            ,   documents = createSrcDocInfo projectFileInfo 
             ,   additionalDocuments=seq[]
             //,   compilationOptions=
             //,   parseOptions=

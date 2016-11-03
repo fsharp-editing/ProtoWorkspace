@@ -1,5 +1,5 @@
 ﻿System.IO.Directory.SetCurrentDirectory __SOURCE_DIRECTORY__
-
+#r "System.Threading.Tasks"
 #load "scripts/load-references-release.fsx"
 #r "bin/release/protoworkspace.dll"
 
@@ -17,6 +17,7 @@ open System.Xml
 open System.Xml.Linq
 open ProtoWorkspace
 open ProtoWorkspace.XLinq
+open System.Threading
 
 
 let printsq sqs = sqs |> Seq.iter (printfn "%A")
@@ -31,13 +32,17 @@ let xdoc = (library1path |> File.ReadAllText |> XDocument.Parse).Root
 let lib1info = (ProjectFileInfo.fromXDoc library1path) |> ProjectFileInfo.toProjectInfo
 
 let fswork = new FSharpWorkspace()
-;;
-printsq fswork.Services.SupportedLanguages
-;;
 let lib1proj = fswork.AddProject lib1info
 ;;
 lib1proj.Documents
 |> Seq.iter (fun doc -> printfn "%s - %s" doc.Name doc.FilePath)
+
+
+lib1proj.Documents |> Seq.find(fun doc -> doc.Name = "Library1")
+|> fun doc -> 
+    printfn "%s" doc.Name
+    let text = doc.GetTextAsync().Result
+    text.ToString()
 
 // Below is for the MsBuild Approach
 
