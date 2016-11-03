@@ -136,6 +136,12 @@ type FSharpWorkspace () as self =
     inherit Workspace(FSharpHostService(), "FSharp")
     let bufferManager = new BufferManager(self)
     let disposables = ResizeArray<IDisposable>()
+
+    // TODO - 
+    //  What additional data caches does the workspace need?
+    //  * FSharpProjectOptions dictionary that updates on projectInfo change events?
+    //  *     
+
     do 
         disposables.Add bufferManager
         

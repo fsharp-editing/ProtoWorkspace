@@ -79,6 +79,7 @@ type OutputType =
         | EqualsIC Constants.Module -> Some Module
         | _ -> None
 
+// TODO - add another field to store `AdditionalDocuments` for use during ProjectInfo creation
 type ProjectFileInfo = { 
     ProjectId                 : ProjectId
     ProjectGuid               : Guid option
@@ -94,6 +95,7 @@ type ProjectFileInfo = {
     PreprocessorySymbolNames  : string ResizeArray
     SourceFiles               : string ResizeArray
     References                : string ResizeArray
+    /// Collection of paths fsproj files for the project references
     ProjectReferences         : string ResizeArray
 //    ProjectReferences         : ProjectFileInfo ResizeArray
     Analyzers                 : string ResizeArray 
@@ -349,7 +351,24 @@ module ProjectFileInfo =
 
 
     /// Converts into the Microsoft.CodeAnalysis ProjectInfo used by workspaces
-    let toProjectInfo (projectFileInfo : ProjectFileInfo) = 
+    // TODO -   
+    //  change the internals to a recusive generation of projectInfo for all project references
+    //  without creating duplicate projects        
+    let toProjectInfo (workspace:'a when 'a :> Workspace) (projectFileInfo : ProjectFileInfo) = 
+        
+        let projectRefs =      
+                let projIds, paths = (workspace :> Workspace).GetProjectIdsFromPaths projectFileInfo.ProjectReferences
+                // TODO - this is a temporary impl, projectInfos need to be generated for the paths to projects
+                // that aren't contained in the workspace
+                Seq.append 
+                    [ for projId in projIds -> ProjectReference(projId) ]
+                    [ for path in paths -> ProjectReference(ProjectId.CreateNewId()) ]
+
+        let projDict = 
+            let dict = Dictionary<_,_>()
+            workspace.CurrentSolution.Projects
+            |> Seq.iter(fun proj -> dict.Add(proj.Name,proj.Id))
+            
         ProjectInfo.Create
             (   projectFileInfo.ProjectId
             ,   VersionStamp.Create()
@@ -364,7 +383,7 @@ module ProjectFileInfo =
                 projectFileInfos should be passed to this function to prevent the creation
                 of duplicate projectfile infos for referenced projects that have different ids            
             *)
-            ,   projectReferences=seq[]
+            ,   projectReferences= projectRefs
             ,   metadataReferences=seq[]
             ,   analyzerReferences=seq[]
             ,   documents = createSrcDocInfo projectFileInfo 
@@ -374,26 +393,13 @@ module ProjectFileInfo =
             //,   isSubmission=
             //,   hostObjectType=
             )
-
+        
 
     open Microsoft.FSharp.Compiler.SourceCodeServices
 
-    let toFSharpProjectOptions (projectFileInfo:ProjectFileInfo) : FSharpProjectOptions =
+    let toFSharpProjectOptions (workspace:'a when 'a :> Workspace) (projectFileInfo:ProjectFileInfo) : FSharpProjectOptions =
+        (projectFileInfo |> toProjectInfo workspace).ToFSharpProjectOptions workspace
         
-        let rec buildOptions ls = ()
-
-
-
-
-        {   ProjectFileName = projectFileInfo.Name
-            ProjectFileNames = [||]
-            OtherOptions = [||]
-            ReferencedProjects = [||]
-            IsIncompleteTypeCheckEnvironment = false
-            UseScriptResolutionRules = false
-            LoadTime = DateTime.Now
-            UnresolvedReferences = None
-        }
 
 
 (* From Partial Clases
