@@ -23,15 +23,18 @@ open System.Threading
 let printsq sqs = sqs |> Seq.iter (printfn "%A")
 
 
-let library1path = "../data/projects/Library1/Library1.fsproj" |> Path.GetFullPath
+//let library1path = "../data/projects/Library1/Library1.fsproj" |> Path.GetFullPath
+let library1path = "ProtoWorkspace.fsproj" |> Path.GetFullPath
 let library2path = "../data/projects/Library2/Library2.fsproj" |> Path.GetFullPath
 
 
 let xdoc = (library1path |> File.ReadAllText |> XDocument.Parse).Root
 
-let lib1info = (ProjectFileInfo.fromXDoc library1path) |> ProjectFileInfo.toProjectInfo
-
 let fswork = new FSharpWorkspace()
+
+
+let lib1info = (ProjectFileInfo.fromXDoc library1path) |> ProjectFileInfo.toProjectInfo fswork
+
 let lib1proj = fswork.AddProject lib1info
 ;;
 lib1proj.Documents
@@ -39,18 +42,35 @@ lib1proj.Documents
 
 
 lib1proj.Documents |> Seq.find(fun doc -> doc.Name = "Library1")
-|> fun doc -> 
+|> fun doc ->
     printfn "%s" doc.Name
     let text = doc.GetTextAsync().Result
+
     text.ToString()
+;;
 
-// Below is for the MsBuild Approach
+let checker = FSharpChecker.Create()
 
-//System.Environment.SetEnvironmentVariable("MSBUILD_EXE_PATH","../packages/MSBuild/runtimes/any/native/MSBuild.exe")
+let fsopts = lib1proj.ToFSharpProjectOptions fswork
+;;
+let checkDoc (doc:Document) = async {
+    let! version = doc.GetTextVersionAsync() |> Async.AwaitTask
+    let! text = doc.GetTextAsync() |> Async.AwaitTask
+    let! parseResults, checkAnswer = checker.ParseAndCheckFileInProject(doc.FilePath,0,text.ToString(),fsopts)
+    return
+        match checkAnswer with
+        | FSharpCheckFileAnswer.Succeeded res -> Some res
+        | res -> None
+}
 
-//let collection = new ProjectCollection()
-////collection.GlobalProperties.Add("BuildingInsideVisualStudio", "true")
-//collection.SetGlobalProperty("BuildingInsideVisualStudio", "true")
-//
-//collection.DefaultToolsVersion <- "14.0"
-//let proj = Project(library1path,null,null,collection,ProjectLoadSettings.IgnoreMissingImports)
+
+lib1proj.Documents |> Seq.find(fun doc -> doc.Name = "ProjectFileInfo")
+|> fun doc ->
+    let tree = checkDoc doc |> Async.RunSynchronously
+    if tree.IsSome then
+        (tree.Value.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously)
+        |> Array.iter ^ fun sym -> printfn "%s" sym.Symbol.FullName
+    else
+        printfn "didn't get back a parse tree"
+
+

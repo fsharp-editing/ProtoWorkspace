@@ -6,6 +6,7 @@
       "../XLinq.fs"
       "../Environment.fs"
       "../Constants.fs"
+      "../Text.fs"
       "../Utilities.fs"
       "../MSBuildInfo.fs"
       "../ProjectFileInfo.fs"

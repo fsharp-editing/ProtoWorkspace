@@ -4,13 +4,14 @@ open System
 open System.Collections.Generic
 open Microsoft.Extensions.Logging
 
+
 type ILogger with
-    member self.LogInfofn msg = Printf.ksprintf (fun s -> self.LogInformation(s, [||])) msg
+    member self.LogInfofn msg     = Printf.ksprintf (fun s -> self.LogInformation(s, [||])) msg
     member self.LogCriticalfn msg = Printf.ksprintf (fun s -> self.LogCritical(s, [||])) msg
-    member self.LogDebugfn msg = Printf.ksprintf (fun s -> self.LogDebug(s, [||])) msg
-    member self.LogTracefn msg = Printf.ksprintf (fun s -> self.LogTrace(s, [||])) msg
-    member self.LogErrorfn msg = Printf.ksprintf (fun s -> self.LogError(s, [||])) msg
-    member self.LogWarningfn msg = Printf.ksprintf (fun s -> self.LogWarning(s, [||])) msg
+    member self.LogDebugfn msg    = Printf.ksprintf (fun s -> self.LogDebug(s, [||])) msg
+    member self.LogTracefn msg    = Printf.ksprintf (fun s -> self.LogTrace(s, [||])) msg
+    member self.LogErrorfn msg    = Printf.ksprintf (fun s -> self.LogError(s, [||])) msg
+    member self.LogWarningfn msg  = Printf.ksprintf (fun s -> self.LogWarning(s, [||])) msg
 
 open Microsoft.CodeAnalysis
 
@@ -36,8 +37,8 @@ type Workspace with
     /// returns a mapping of the projectId and path of projects inside the workspace
     /// and a list of the paths to projects the workspace doesn't include
     member self.GetProjectIdsFromPaths paths =
-        let dict = self.ProjectDictionary()        
-        let pathsInside,pathsOutside = paths |> List.ofSeq |> List.partition (fun path -> dict.ContainsKey path)        
+        let dict = self.ProjectDictionary()
+        let pathsInside,pathsOutside = paths |> List.ofSeq |> List.partition (fun path -> dict.ContainsKey path)
         let idmap = pathsInside |> Seq.map (fun path -> dict.[path])
         idmap, pathsOutside
 
@@ -46,15 +47,15 @@ type Solution with
 
     member self.TryGetProject (projId:ProjectId) =
         if self.ContainsProject projId then Some (self.GetProject projId) else None
-        
+
 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 
 type Document with
-    
-    member self.ToDocumentInfo() =
+
+    member self.ToDocumentInfo () =
         DocumentInfo.Create
             (   id=self.Id
             ,   name=self.Name
@@ -67,7 +68,7 @@ type Document with
 
 type TextDocument with
 
-    member self.ToDocumentInfo() =
+    member self.ToDocumentInfo () =
         DocumentInfo.Create
             (   id=self.Id
             ,   name=self.Name
@@ -79,7 +80,7 @@ type TextDocument with
 
 type Project with
 
-    member self.ToProjectInfo() =
+    member self.ToProjectInfo () =
         ProjectInfo.Create
             (   self.Id
             ,   self.Version
@@ -97,23 +98,23 @@ type Project with
             ,   parseOptions=self.ParseOptions
             ,   isSubmission=self.IsSubmission
             )
-        
+
 
 let internal toFSharpProjectOptions (workspace:'a :> Workspace) (projInfo:ProjectInfo): FSharpProjectOptions =
     let projectStore = Dictionary<ProjectId,FSharpProjectOptions>()
-        
+
     let rec generate (projInfo:ProjectInfo) : FSharpProjectOptions =
         let getProjectRefs (projInfo:ProjectInfo): (string * FSharpProjectOptions)[] =
-            projInfo.ProjectReferences 
+            projInfo.ProjectReferences
             |> Seq.choose (fun pref -> workspace.CurrentSolution.TryGetProject pref.ProjectId)
-            |> Seq.map(fun proj -> 
+            |> Seq.map(fun proj ->
                 let proj = proj.ToProjectInfo()
-                if projectStore.ContainsKey(proj.Id) then 
+                if projectStore.ContainsKey(proj.Id) then
                     (proj.OutputFilePath, projectStore.[proj.Id])
-                else 
+                else
                     let fsinfo = generate proj
-                    projectStore.Add(proj.Id,fsinfo)            
-                    (proj.OutputFilePath, fsinfo) 
+                    projectStore.Add(proj.Id,fsinfo)
+                    (proj.OutputFilePath, fsinfo)
             )|> Array.ofSeq
 
         {   ProjectFileName = projInfo.FilePath
@@ -123,7 +124,7 @@ let internal toFSharpProjectOptions (workspace:'a :> Workspace) (projInfo:Projec
             IsIncompleteTypeCheckEnvironment = false
             UseScriptResolutionRules = false
             LoadTime = System.DateTime.Now
-            UnresolvedReferences = None      
+            UnresolvedReferences = None
         }
     let fsprojOptions = generate projInfo
     projectStore.Clear()
@@ -131,7 +132,7 @@ let internal toFSharpProjectOptions (workspace:'a :> Workspace) (projInfo:Projec
 
 
 
-type ProjectInfo with 
+type ProjectInfo with
 
     member self.ToFSharpProjectOptions (workspace:'a :> Workspace) : FSharpProjectOptions =
         toFSharpProjectOptions workspace self
@@ -141,3 +142,10 @@ type Project with
 
     member self.ToFSharpProjectOptions (workspace:'a :> Workspace) : FSharpProjectOptions =
         self.ToProjectInfo().ToFSharpProjectOptions workspace
+
+
+open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Text
+open Microsoft.FSharp.Compiler.Range
+
+
