@@ -130,12 +130,17 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator : HostServicesAggregat
     inherit Workspace(aggregator.CreateHostServices(), "FSharp")
 *)
 
-
+open FSharp.Control
 type FSharpWorkspace () as self =
 //    inherit Workspace(MefHostServices.DefaultHost, "FSharp")
     inherit Workspace(FSharpHostService(), "FSharp")
     let bufferManager = new BufferManager(self)
     let disposables = ResizeArray<IDisposable>()
+
+    let checkProjectId (projectId:ProjectId) =
+        match self.CurrentSolution.ContainsProject projectId with
+        | false -> failwithf "The workspace does not contain a project with the id '%s'" ^ string projectId.Id
+        | true -> ()
 
     // TODO -
     //  What additional data caches does the workspace need?
@@ -144,6 +149,7 @@ type FSharpWorkspace () as self =
 
     do
         disposables.Add bufferManager
+
 
     //let activeDocuments = HashSet<DocumentId>()
     //new() = new FSharpWorkspace(HostServicesAggregator(Seq.empty))
@@ -156,7 +162,7 @@ type FSharpWorkspace () as self =
         base.OnDocumentAdded documentInfo
         self.CurrentSolution.GetDocument documentInfo.Id
 
-    /// Adds a document to the workspace.
+    /// Adds a document to a project in the workspace.
     member __.AddDocument(projectId : ProjectId, name : string, text : SourceText) =
         checkNullArg projectId "projectId"
         checkNullArg name "name"
@@ -176,16 +182,8 @@ type FSharpWorkspace () as self =
             let text = task.Result
             base.OnDocumentOpened(docId, text.Container, activate)
 
-    ///<summary>
-    ///<para> this </para>
-    ///<para> is unfortunately </para>
-    ///<para> the only way to get </para>
-    ///<para> newlines </para>
-    /// and the tage for <code>let x = 10</code>
-    /// doesn't work in either form <c>let x = 10</c>
+
     /// Puts the specified document into the closed state.
-    ///</summary>
-    ///<param name="docId"> The Id of the document to close</param>
     override __.CloseDocument docId =
         let doc = base.CurrentSolution.GetDocument docId
         if isNull doc then ()
@@ -198,6 +196,7 @@ type FSharpWorkspace () as self =
             let version = versionTask.Result
             let loader = TextLoader.From(TextAndVersion.Create(text, version, doc.FilePath))
             base.OnDocumentClosed(docId, loader)
+
 
     /// Adds a project to the workspace. All previous projects remain intact.
     member self.AddProject projectInfo =
@@ -226,16 +225,23 @@ type FSharpWorkspace () as self =
 
     member __.AddProjectReference(projectId, projectReference) =
         base.OnProjectReferenceAdded(projectId, projectReference)
+
     member __.AddMetadataReference(projectId, metadataReference) =
         base.OnMetadataReferenceAdded(projectId, metadataReference)
+
     member __.RemoveMetadataReference(projectId, metadataReference) =
         base.OnMetadataReferenceRemoved(projectId, metadataReference)
+
     //    member __. AddDocument documentInfo =
     //        base.OnDocumentAdded documentInfo
     member __.RemoveDocument documentId = base.OnDocumentRemoved documentId
+
     member __.RemoveProject projectId = base.OnProjectRemoved projectId
+
     member __.SetCompilationOptions(projectId, options) = base.OnCompilationOptionsChanged(projectId, options)
+
     member __.SetParseOptions(projectId, parseOptions) = base.OnParseOptionsChanged(projectId, parseOptions)
+
     member __.OnDocumentChanged(documentId, text) =
         base.OnDocumentTextChanged(documentId, text, PreservationMode.PreserveIdentity)
 
@@ -248,8 +254,10 @@ type FSharpWorkspace () as self =
     member self.GetDocuments filePath =
         base.CurrentSolution.GetDocumentIdsWithFilePath(filePath)
             .Select(fun docId -> self.CurrentSolution.GetDocument docId)
+
     member self.TryGetDocument filePath =
         self.TryGetDocumentId filePath |> Option.map (fun docId -> self.CurrentSolution.GetDocument docId)
+
     interface IDisposable with
         member __.Dispose() =
             disposables |> Seq.iter dispose

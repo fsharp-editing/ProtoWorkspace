@@ -7,5 +7,7 @@ open ProtoWorkspace
 
 let testSlnPath = "../data/TestSln.sln"
 
+let slnFileInfo = (SolutionFile.load testSlnPath)
 
-(SolutionFile.load testSlnPath).ToString()
+SolutionFile.toSolutionInfo slnFileInfo
+

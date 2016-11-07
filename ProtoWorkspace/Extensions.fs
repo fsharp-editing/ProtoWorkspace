@@ -3,6 +3,10 @@ module ProtoWorkspace.Extensions
 open System
 open System.Collections.Generic
 open Microsoft.Extensions.Logging
+open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Text
+open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
 
 type ILogger with
@@ -12,45 +16,6 @@ type ILogger with
     member self.LogTracefn msg    = Printf.ksprintf (fun s -> self.LogTrace(s, [||])) msg
     member self.LogErrorfn msg    = Printf.ksprintf (fun s -> self.LogError(s, [||])) msg
     member self.LogWarningfn msg  = Printf.ksprintf (fun s -> self.LogWarning(s, [||])) msg
-
-open Microsoft.CodeAnalysis
-
-type Workspace with
-
-    member self.ProjectDictionary() =
-        let dict = Dictionary<_,_>()
-        self.CurrentSolution.Projects
-        |> Seq.iter(fun proj -> dict.Add(proj.FilePath,proj.Id))
-        dict
-
-
-    member self.ProjectPaths() =
-        self.CurrentSolution.Projects |> Seq.map(fun proj -> proj.FilePath)
-
-
-    member self.GetProjectIdFromPath path : ProjectId option =
-        let dict = self.ProjectDictionary()
-        Dict.tryFind path dict
-
-
-    /// checks the workspace for projects located at the provided paths.
-    /// returns a mapping of the projectId and path of projects inside the workspace
-    /// and a list of the paths to projects the workspace doesn't include
-    member self.GetProjectIdsFromPaths paths =
-        let dict = self.ProjectDictionary()
-        let pathsInside,pathsOutside = paths |> List.ofSeq |> List.partition (fun path -> dict.ContainsKey path)
-        let idmap = pathsInside |> Seq.map (fun path -> dict.[path])
-        idmap, pathsOutside
-
-
-type Solution with
-
-    member self.TryGetProject (projId:ProjectId) =
-        if self.ContainsProject projId then Some (self.GetProject projId) else None
-
-
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
 
 
 type Document with
@@ -78,7 +43,32 @@ type TextDocument with
             )
 
 
+type Solution with
+
+    /// Get a project inside the solution using the project's name
+    member self.GetProject projectName =
+        self.Projects |> Seq.find(fun proj -> proj.Name = projectName)
+
+    /// Try to get a project inside the solution using the project's name
+    member self.TryGetProject projectName =
+        self.Projects |> Seq.tryFind(fun proj -> proj.Name = projectName)
+
+    /// Try to get a project inside the solution using the project's id
+    member self.TryGetProject (projId:ProjectId) =
+        if self.ContainsProject projId then Some (self.GetProject projId) else None
+
+    /// Sequence of documents from all projects within the solution
+    member self.Documents = self.Projects |> Seq.collect (fun proj -> proj.Documents)
+
+
 type Project with
+
+    member self.GetDocument docName =
+        self.Documents |> Seq.find (fun doc -> doc.Name = docName)
+
+    member self.TryGetDocument docName =
+        self.Documents |> Seq.tryFind (fun doc -> doc.Name = docName)
+
 
     member self.ToProjectInfo () =
         ProjectInfo.Create
@@ -144,8 +134,36 @@ type Project with
         self.ToProjectInfo().ToFSharpProjectOptions workspace
 
 
-open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Text
-open Microsoft.FSharp.Compiler.Range
 
 
+
+type Workspace with
+
+    member self.ProjectDictionary() =
+        let dict = Dictionary<_,_>()
+        self.CurrentSolution.Projects
+        |> Seq.iter(fun proj -> dict.Add(proj.FilePath,proj.Id))
+        dict
+
+
+    member self.ProjectPaths() =
+        self.CurrentSolution.Projects |> Seq.map(fun proj -> proj.FilePath)
+
+
+    member self.GetProjectIdFromPath path : ProjectId option =
+        let dict = self.ProjectDictionary()
+        Dict.tryFind path dict
+
+
+    /// checks the workspace for projects located at the provided paths.
+    /// returns a mapping of the projectId and path of projects inside the workspace
+    /// and a list of the paths to projects the workspace doesn't include
+    member self.GetProjectIdsFromPaths paths =
+        let dict = self.ProjectDictionary()
+        let pathsInside,pathsOutside = paths |> List.ofSeq |> List.partition (fun path -> dict.ContainsKey path)
+        let idmap = pathsInside |> Seq.map (fun path -> dict.[path])
+        idmap, pathsOutside
+
+
+    member self.GetProject projectName =
+        self.CurrentSolution.GetProject

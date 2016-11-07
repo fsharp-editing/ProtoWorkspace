@@ -50,3 +50,5 @@
 #r "../../packages/System.Xml.XmlDocument/ref/net46/System.Xml.XmlDocument.dll"
 #r "../../packages/System.Xml.XPath/ref/net46/System.Xml.XPath.dll"
 #r "../../packages/System.Xml.XPath.XDocument/ref/net46/System.Xml.XPath.XDocument.dll"
+#r "System.Configuration.dll"
+#r "../../packages/FSharpVSPowerTools.Core/lib/net45/FSharpVSPowerTools.Core.dll"

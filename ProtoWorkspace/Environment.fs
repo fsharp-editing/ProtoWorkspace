@@ -1,27 +1,27 @@
 ﻿namespace ProtoWorkspace
 
 [<AutoOpen>]
-module Environment = 
+module Environment =
     open System
-    
+
     /// Are we running on the Mono platform?
-    let runningOnMono = 
-        try 
+    let runningOnMono =
+        try
             System.Type.GetType "Mono.Runtime" <> null
         with _ -> false
-    
+
     let ``namewith.to`` = ""
-    
+
     /// Target framework (used to find the right version of F# binaries)
-    type FSharpTargetFramework = 
+    type FSharpTargetFramework =
         | NET_2_0
         | NET_3_0
         | NET_3_5
         | NET_4_0
         | NET_4_5
         | NET_4_6
-    
-    type FSharpCompilerVersion = 
+
+    type FSharpCompilerVersion =
         // F# 2.0
         | FSharp_2_0
         // F# 3.0
@@ -32,17 +32,17 @@ module Environment =
         | FSharp_4_0
         // F# 4.1
         | FSharp_4_1
-        
-        override x.ToString() = 
+
+        override x.ToString() =
             match x with
             | FSharp_2_0 -> "4.0.0.0"
             | FSharp_3_0 -> "4.3.0.0"
             | FSharp_3_1 -> "4.3.1.0"
             | FSharp_4_0 -> "4.4.0.0"
             | FSharp_4_1 -> "4.4.1.0"
-        
+
         /// The current requested language version can be overridden by the user using environment variable.
-        static member LatestKnown = 
+        static member LatestKnown =
             match System.Environment.GetEnvironmentVariable "FSHARP_PREFERRED_VERSION" with
             | "4.0.0.0" -> FSharp_2_0
             | "4.3.0.0" -> FSharp_3_0
@@ -50,7 +50,7 @@ module Environment =
             | "4.4.0.0" -> FSharp_4_0
             | "4.4.1.0" -> FSharp_4_1
             | null | _ -> FSharp_4_0
-    
+
     let maxPath = 260
     let maxDataLength = System.Text.UTF32Encoding().GetMaxByteCount maxPath
     let KEY_WOW64_DEFAULT = 0x0000
