@@ -13,8 +13,8 @@ type FSharpHostLanguageService (workspace:Workspace) =
 
     override __.Language = "FSharp"
     override __.WorkspaceServices with get () = workspace.Services
-    override __.GetService<'a when 'a :> ILanguageService>() = 
-        Unchecked.defaultof<'a>
+    override __.GetService<'a when 'a :> ILanguageService>(): 'a =
+        failwithf "no services to get"
 
 
 type FSharpHostWorkspaceService (workspace:Workspace,baseServices:HostWorkspaceServices) =
@@ -22,7 +22,7 @@ type FSharpHostWorkspaceService (workspace:Workspace,baseServices:HostWorkspaceS
 
     let languageService = FSharpHostLanguageService workspace
 
-    override __.GetService<'a when 'a :> IWorkspaceService >()  = 
+    override __.GetService<'a when 'a :> IWorkspaceService >()  =
         baseServices.GetService<'a>()
 
     override __.HostServices with get() = workspace.Services.HostServices

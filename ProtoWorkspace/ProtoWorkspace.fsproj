@@ -57,12 +57,10 @@
     <Compile Include="Constants.fs" />
     <Compile Include="Environment.fs" />
     <Compile Include="Text.fs" />
-    <Compile Include="Utilities.fs" />
-    <Compile Include="MSBuildInfo.fs" />
+    <Compile Include="MSBuildConfig.fs" />
     <Compile Include="ProjectFileInfo.fs" />
-    <Compile Include="SolutionSystem.fs" />
+    <Compile Include="SolutionFileInfo.fs" />
     <Compile Include="BufferTracker.fs" />
-    <Compile Include="FileSystem.fs" />
     <Compile Include="ProjectConfig.fs" />
     <Compile Include="HostServices.fs" />
     <Compile Include="Workspace.fs" />

@@ -12,6 +12,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host.Mef
 open ProtoWorkspace.HostServices
+open FSharpVSPowerTools
 
 type IHostServicesProvider =
     abstract Assemblies : Assembly ImmutableArray
@@ -102,22 +103,6 @@ module Workspace =
             } : LinePositionSpanTextChange)
     }
 
-    let findProjectsByFileName (filename : string) (workspace : Workspace) =
-        let dirInfo = (FileInfo filename).Directory
-
-        let candidates =
-            workspace.CurrentSolution.Projects
-            |> Seq.groupBy (fun project -> (FileInfo project.FilePath).Directory.FullName)
-            |> Map.ofSeq
-
-        let rec loop (dirInfo : DirectoryInfo) projects =
-            if isNull dirInfo then projects
-            else
-                match candidates.TryFind dirInfo.FullName with
-                | Some projects -> projects
-                | None -> loop dirInfo.Parent projects
-
-        loop dirInfo Seq.empty
 
 open Workspace
 (*
@@ -131,6 +116,9 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator : HostServicesAggregat
 *)
 
 open FSharp.Control
+open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.SourceCodeServices
+
 type FSharpWorkspace () as self =
 //    inherit Workspace(MefHostServices.DefaultHost, "FSharp")
     inherit Workspace(FSharpHostService(), "FSharp")
@@ -141,6 +129,13 @@ type FSharpWorkspace () as self =
         match self.CurrentSolution.ContainsProject projectId with
         | false -> failwithf "The workspace does not contain a project with the id '%s'" ^ string projectId.Id
         | true -> ()
+
+
+    let languageService = LanguageService (true,50)
+
+    let projectOptions = Dictionary<ProjectId,FSharpProjectOptions>()
+
+
 
     // TODO -
     //  What additional data caches does the workspace need?
@@ -274,7 +269,7 @@ and internal BufferManager(workspace : FSharpWorkspace) as self =
     let tryAddTransientDocument (fileName : string) (fileContent : string) =
         if String.IsNullOrWhiteSpace fileName then false
         else
-        let projects = findProjectsByFileName fileName workspace
+        let projects = workspace.CurrentSolution.Projects
         if projects.Count() = 0 then false
         else
         let sourceText = SourceText.From fileContent

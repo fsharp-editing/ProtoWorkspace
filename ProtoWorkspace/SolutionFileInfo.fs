@@ -117,7 +117,7 @@ module ProjectBlock =
           ProjectGuid = projectGuid
           ProjectSections = projectSections }
 
-    
+
 
     let getText (projectBlock : ProjectBlock) =
         let typeGuid = projectBlock.ProjectTypeGuid.ToString("B").ToUpper()
@@ -155,7 +155,7 @@ module ProjectBlock =
 //    let toProjectInfo (projectBlock:ProjectBlock) =
 //        ProjectInfo.
 //        let p = projectBlock
-type SolutionFile =
+type SolutionFileInfo =
     { Path : string
       HeaderLines : string []
       VSVersionLineOpt : string
@@ -166,8 +166,8 @@ type SolutionFile =
 // NOTE - I'm not a fan of this parsing approach,
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix); RequireQualifiedAccess>]
-module SolutionFile =
-    let getText (sln : SolutionFile) =
+module SolutionFileInfo =
+    let getText (sln : SolutionFileInfo) =
         let builder = StringBuilder().AppendLine()
         for line in sln.HeaderLines do
             builder.AppendLine line |> ignore
@@ -282,7 +282,7 @@ module SolutionFile =
         use reader = new StringReader(File.ReadAllText path)
         parse path reader
 
-    let toSolutionInfo (solutionFile: SolutionFile) : SolutionInfo =
+    let toSolutionInfo (solutionFile: SolutionFileInfo) : SolutionInfo =
         let projectBlocks = solutionFile.ProjectBlocks |> Array.map ProjectBlock.toProjectInfo
 
         SolutionInfo.Create(
