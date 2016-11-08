@@ -107,24 +107,24 @@ type ProjectFileInfo = {
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ProjectFileInfo =
-    let getFullPath (projectItem : ProjectItemInstance) = projectItem.GetMetadataValue MetadataNames.FullPath
+    let getFullPath (projectItem : ProjectItemInstance) = projectItem.GetMetadataValue MetadataName.FullPath
     let referenceSourceTargetIsProjectReference (projectItem : ProjectItemInstance) : bool =
-        projectItem.GetMetadataValue(MetadataNames.ReferenceSourceTarget)
-                   .Equals(ItemNames.ProjectReference, StringComparison.OrdinalIgnoreCase)
+        projectItem.GetMetadataValue(MetadataName.ReferenceSourceTarget)
+                   .Equals(ItemName.ProjectReference, StringComparison.OrdinalIgnoreCase)
 
     // TODO - Rewrite so it can work with all args besides `projectFilePath` as options
     let create (projectFilePath : string) (solutionDirectory : string) (logger : ILogger) (options : MSBuildOptions)
         (diagnostics : MSBuildDiagnosticsMessage ICollection) =
         if not (File.Exists projectFilePath) then failwithf "No project file found at '%s'" projectFilePath
         let globalProperties =
-            dict [ PropertyNames.DesignTimeBuild, "true"
-                   PropertyNames.BuildProjectReferences, "false"
-                   PropertyNames.ResolveReferenceDependencies, "true"
-                   PropertyNames.SolutionDir, solutionDirectory + string Path.DirectorySeparatorChar ]
+            dict [ Property.DesignTimeBuild, "true"
+                   Property.BuildProjectReferences, "false"
+                   Property.ResolveReferenceDependencies, "true"
+                   Property.SolutionDir, solutionDirectory + string Path.DirectorySeparatorChar ]
         if not ^ String.IsNullOrWhiteSpace options.MSBuildExtensionsPath then
-            globalProperties.Add (PropertyNames.MSBuildExtensionsPath, options.MSBuildExtensionsPath)
+            globalProperties.Add (Property.MSBuildExtensionsPath, options.MSBuildExtensionsPath)
         if not ^ String.IsNullOrWhiteSpace options.VisualStudioVersion then
-            globalProperties.Add (PropertyNames.VisualStudioVersion, options.VisualStudioVersion)
+            globalProperties.Add (Property.VisualStudioVersion, options.VisualStudioVersion)
         let collection = new ProjectCollection(globalProperties)
         logger.LogInfofn "Using toolset %s for '%s'" (options.ToolsVersion ?|? collection.DefaultToolsVersion)
             projectFilePath
@@ -136,44 +136,44 @@ module ProjectFileInfo =
 
         let buildResult : bool =
             let loggers = [ MSBuildLogForwarder(logger, diagnostics) :> Microsoft.Build.Framework.ILogger ] :> seq<_>
-            projectInstance.Build (TargetNames.ResolveReferences, loggers)
+            projectInstance.Build (TargetName.ResolveReferences, loggers)
 
         // if not buildResult then null else
         let sourceFiles =
-            projectInstance.GetItems ItemNames.Compile
+            projectInstance.GetItems ItemName.Compile
             |> Seq.map getFullPath
             |> ResizeArray
 
         let references =
-            projectInstance.GetItems ItemNames.ReferencePath
+            projectInstance.GetItems ItemName.ReferencePath
             |> Seq.filter referenceSourceTargetIsProjectReference
             |> Seq.map getFullPath
             |> ResizeArray
 
         let projectReferences =
-            projectInstance.GetItems ItemNames.ProjectReference
+            projectInstance.GetItems ItemName.ProjectReference
             |> Seq.filter referenceSourceTargetIsProjectReference
             |> Seq.map getFullPath
             |> ResizeArray
 
         let analyzers =
-            projectInstance.GetItems ItemNames.Analyzer
+            projectInstance.GetItems ItemName.Analyzer
             |> Seq.map getFullPath
             |> ResizeArray
 
         {   ProjectFilePath = projectFilePath
             ProjectId = ProjectId.CreateNewId()
-            ProjectGuid = projectInstance.GetPropertyValue PropertyNames.ProjectGuid |> PropertyConverter.toGuid |> Some
-            Name = projectInstance.GetPropertyValue PropertyNames.ProjectName
-            TargetFramework = FrameworkName(projectInstance.GetPropertyValue PropertyNames.TargetFrameworkMoniker)|> Some
-            AssemblyName = projectInstance.GetPropertyValue PropertyNames.AssemblyName
-            TargetPath = projectInstance.GetPropertyValue PropertyNames.TargetPath
-            OutputType = OutputType.Parse <| projectInstance.GetPropertyValue PropertyNames.OutputType
-            SignAssembly = PropertyConverter.toBoolean <| projectInstance.GetPropertyValue PropertyNames.SignAssembly
-            AssemblyOriginatorKeyFile = projectInstance.GetPropertyValue PropertyNames.AssemblyOriginatorKeyFile
-            GenerateXmlDocumentation = projectInstance.GetPropertyValue PropertyNames.DocumentationFile
+            ProjectGuid = projectInstance.GetPropertyValue Property.ProjectGuid |> PropertyConverter.toGuid |> Some
+            Name = projectInstance.GetPropertyValue Property.ProjectName
+            TargetFramework = FrameworkName(projectInstance.GetPropertyValue Property.TargetFrameworkMoniker)|> Some
+            AssemblyName = projectInstance.GetPropertyValue Property.AssemblyName
+            TargetPath = projectInstance.GetPropertyValue Property.TargetPath
+            OutputType = OutputType.Parse <| projectInstance.GetPropertyValue Property.OutputType
+            SignAssembly = PropertyConverter.toBoolean <| projectInstance.GetPropertyValue Property.SignAssembly
+            AssemblyOriginatorKeyFile = projectInstance.GetPropertyValue Property.AssemblyOriginatorKeyFile
+            GenerateXmlDocumentation = projectInstance.GetPropertyValue Property.DocumentationFile
             PreprocessorySymbolNames =
-                projectInstance.GetPropertyValue PropertyNames.DefineConstants
+                projectInstance.GetPropertyValue Property.DefineConstants
                 |> PropertyConverter.toDefineConstants
                 |> ResizeArray
             SourceFiles = sourceFiles
@@ -184,55 +184,64 @@ module ProjectFileInfo =
         }
 
     let create2 (projectFilePath : string) =
-        if not (File.Exists projectFilePath) then failwithf "No project file found at '%s'" projectFilePath
-        let globalProperties =
-            dict [
-                PropertyNames.DesignTimeBuild, "true"
-                PropertyNames.BuildProjectReferences, "false"
-                PropertyNames.ResolveReferenceDependencies, "true"
-            ]
-        let collection = new ProjectCollection(globalProperties)
-        let project : Project = collection.LoadProject projectFilePath
-        project.GlobalProperties.Add("BuildingInsideVisualStudio", "true")
+        if not (File.Exists projectFilePath) then failwithf "No project file found at '%s'" projectFilePath else
 
-        let projectInstance = project.CreateProjectInstance()
+        let manager = BuildManager.DefaultBuildManager
+
+        let buildParam = BuildParameters(DetailedSummary=true)
+        let projectInstance = ProjectInstance projectFilePath
+        let requestReferences =
+            BuildRequestData(projectInstance,
+                [|
+                    "ResolveAssemblyReferences"
+                    "ResolveProjectReferences"
+                |])
+
+        let fromBuildRes (targetName:string) (result:BuildResult) =
+            if not ^ result.ResultsByTarget.ContainsKey targetName then [||] else
+            result.ResultsByTarget.[targetName].Items
+
+        let result = manager.Build(buildParam,requestReferences)
+
+//            fromBuildRes "ResolveProjectReferences" result
+//            fromBuildRes "ResolveAssemblyReferences" result
 
         // if not buildResult then null else
         let sourceFiles =
-            projectInstance.GetItems ItemNames.Compile
+            projectInstance.GetItems ItemName.Compile
             |> Seq.map getFullPath
             |> ResizeArray
 
         let references =
-            projectInstance.GetItems ItemNames.ReferencePath
+            projectInstance.GetItems ItemName.ReferencePath
             |> Seq.filter referenceSourceTargetIsProjectReference
             |> Seq.map getFullPath
             |> ResizeArray
 
         let projectReferences =
-            projectInstance.GetItems ItemNames.ProjectReference
+            projectInstance.GetItems ItemName.ProjectReference
             |> Seq.filter referenceSourceTargetIsProjectReference
             |> Seq.map getFullPath
             |> ResizeArray
 
         let analyzers =
-            projectInstance.GetItems ItemNames.Analyzer
+            projectInstance.GetItems ItemName.Analyzer
             |> Seq.map getFullPath
             |> ResizeArray
 
         {   ProjectFilePath = projectFilePath
-            ProjectId = ProjectId.CreateFromSerialized(PropertyNames.ProjectGuid |> PropertyConverter.toGuid)
-            ProjectGuid = projectInstance.GetPropertyValue PropertyNames.ProjectGuid |> PropertyConverter.toGuid |> Some
-            Name = projectInstance.GetPropertyValue PropertyNames.ProjectName
-            TargetFramework = FrameworkName(projectInstance.GetPropertyValue PropertyNames.TargetFrameworkMoniker) |> Some
-            AssemblyName = projectInstance.GetPropertyValue PropertyNames.AssemblyName
-            TargetPath = projectInstance.GetPropertyValue PropertyNames.TargetPath
-            OutputType = OutputType.Parse <| projectInstance.GetPropertyValue PropertyNames.OutputType
-            SignAssembly = PropertyConverter.toBoolean <| projectInstance.GetPropertyValue PropertyNames.SignAssembly
-            AssemblyOriginatorKeyFile = projectInstance.GetPropertyValue PropertyNames.AssemblyOriginatorKeyFile
-            GenerateXmlDocumentation = projectInstance.GetPropertyValue PropertyNames.DocumentationFile
+            ProjectId = ProjectId.CreateFromSerialized(Property.ProjectGuid |> PropertyConverter.toGuid)
+            ProjectGuid = projectInstance.GetPropertyValue Property.ProjectGuid |> PropertyConverter.toGuid |> Some
+            Name = projectInstance.GetPropertyValue Property.ProjectName
+            TargetFramework = FrameworkName(projectInstance.GetPropertyValue Property.TargetFrameworkMoniker) |> Some
+            AssemblyName = projectInstance.GetPropertyValue Property.AssemblyName
+            TargetPath = projectInstance.GetPropertyValue Property.TargetPath
+            OutputType = OutputType.Parse <| projectInstance.GetPropertyValue Property.OutputType
+            SignAssembly = PropertyConverter.toBoolean <| projectInstance.GetPropertyValue Property.SignAssembly
+            AssemblyOriginatorKeyFile = projectInstance.GetPropertyValue Property.AssemblyOriginatorKeyFile
+            GenerateXmlDocumentation = projectInstance.GetPropertyValue Property.DocumentationFile
             PreprocessorySymbolNames =
-                projectInstance.GetPropertyValue PropertyNames.DefineConstants
+                projectInstance.GetPropertyValue Property.DefineConstants
                 |> PropertyConverter.toDefineConstants
                 |> ResizeArray
             SourceFiles = sourceFiles

@@ -15,3 +15,5 @@
       "../HostServices.fs"
       "../Workspace.fs"
       "../MSBuildProjectSystem.fs"
+      "../WorkspaceServices.fs"
+      "../Providers/CompletionProvider.fs"

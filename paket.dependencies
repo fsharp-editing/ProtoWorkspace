@@ -6,6 +6,7 @@ nuget FsCheck
 nuget FSharp.Compiler.Service
 nuget FSharp.Core
 nuget FSharpVSPowerTools.Core
+nuget Microsoft.CodeAnalysis.Analyzers
 nuget Microsoft.CodeAnalysis.Workspaces.Common
 nuget Microsoft.Extensions.Caching.Memory
 nuget Microsoft.Extensions.Configuration
@@ -18,3 +19,7 @@ nuget NUnit.Runners
 nuget System.Collections.Immutable
 nuget System.IO.FileSystem.Watcher
 nuget System.Threading.Thread
+nuget Microsoft.Build
+nuget Microsoft.Build.Framework
+nuget Microsoft.Build.Tasks.Core
+nuget Microsoft.Build.Utilities.Core

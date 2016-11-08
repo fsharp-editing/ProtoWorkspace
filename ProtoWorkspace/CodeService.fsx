@@ -66,11 +66,11 @@ let checkDoc (doc:Document) = async {
 
 lib1proj.Documents |> Seq.find(fun doc -> doc.Name = "ProjectFileInfo")
 |> fun doc ->
-    let tree = checkDoc doc |> Async.RunSynchronously
-    if tree.IsSome then
-        (tree.Value.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously)
+    let results = checkDoc doc |> Async.RunSynchronously
+    if results.IsSome then
+        (results.Value.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously)
         |> Array.iter ^ fun sym -> printfn "%s" sym.Symbol.FullName
     else
-        printfn "didn't get back a parse tree"
+        printfn "didn't get back symbol results"
 
 
