@@ -2,6 +2,7 @@ source https://www.nuget.org/api/v2
 framework: >= net45
 redirects: on
 
+nuget FsCheck
 nuget FSharp.Compiler.Service
 nuget FSharp.Core
 nuget FSharpVSPowerTools.Core
@@ -12,7 +13,8 @@ nuget Microsoft.Extensions.FileSystemGlobbing
 nuget Microsoft.Extensions.Logging
 nuget Microsoft.Extensions.Logging.Console
 nuget Microsoft.Extensions.PlatformAbstractions
+nuget NUnit
+nuget NUnit.Runners
 nuget System.Collections.Immutable
 nuget System.IO.FileSystem.Watcher
 nuget System.Threading.Thread
-

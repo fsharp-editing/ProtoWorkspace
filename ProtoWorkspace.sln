@@ -30,6 +30,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Projects", "Projects", "{C0
 		data\projects\Library2\Library2.fsproj = data\projects\Library2\Library2.fsproj
 	EndProjectSection
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ProtoWorkspace.Tests", "ProtoWorkspace.Tests\ProtoWorkspace.Tests.fsproj", "{57E880FE-E9F7-409D-81C7-2F50A62967D4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,6 +42,10 @@ Global
 		{31C9D72F-6B95-4280-9ABF-B97E421FF49D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{31C9D72F-6B95-4280-9ABF-B97E421FF49D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{31C9D72F-6B95-4280-9ABF-B97E421FF49D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57E880FE-E9F7-409D-81C7-2F50A62967D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57E880FE-E9F7-409D-81C7-2F50A62967D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57E880FE-E9F7-409D-81C7-2F50A62967D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57E880FE-E9F7-409D-81C7-2F50A62967D4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
