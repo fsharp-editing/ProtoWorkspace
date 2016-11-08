@@ -4,7 +4,7 @@ source https://dotnet.myget.org/F/msbuild/api/v3/index.json
 source https://dotnet.myget.org/F/dotnet-core/api/v3/index.json
 
 framework: >= net46
-redirects: on
+redirects: force
 
 
 nuget FSharp.Core
@@ -28,12 +28,12 @@ nuget System.Runtime.Numerics
 nuget System.Threading.Thread
 
 #group Netcore
-nuget Microsoft.DotNet.Compiler.Common                      
-nuget Microsoft.DotNet.Cli.Utils                        
-nuget Microsoft.DotNet.ProjectModel                     
-nuget Microsoft.FSharp.Core.netcore                     
-nuget Microsoft.NETCore.App                     
-nuget FSharp.NET.Sdk        import_targets: false               
+nuget Microsoft.DotNet.Compiler.Common
+nuget Microsoft.DotNet.Cli.Utils
+nuget Microsoft.DotNet.ProjectModel
+nuget Microsoft.FSharp.Core.netcore
+nuget Microsoft.NETCore.App
+nuget FSharp.NET.Sdk        import_targets: false
 nuget Microsoft.NET.Sdk     import_targets: false
 
 #group Build

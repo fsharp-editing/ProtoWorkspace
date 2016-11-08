@@ -1,5 +1,9 @@
 ﻿System.IO.Directory.SetCurrentDirectory __SOURCE_DIRECTORY__
-#load "scripts/load-references-release.fsx"
+#r "../packages/Microsoft.Build/lib/net46/Microsoft.Build.dll"
+#r "../packages/Microsoft.Build.Framework/lib/net46/Microsoft.Build.Framework.dll"
+#r "../packages/Microsoft.Build.Tasks.Core/lib/net46/Microsoft.Build.Tasks.Core.dll"
+#r "../packages/Microsoft.Build.Utilities.Core/lib/net46/Microsoft.Build.Utilities.Core.dll"
+#r "bin/release/protoworkspace.dll"
 
 open System.IO
 open Microsoft.Build
