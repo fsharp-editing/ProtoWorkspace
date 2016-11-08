@@ -1,35 +1,19 @@
 ﻿namespace ProtoWorkspace
 
 open System
-open System.Reflection
-open System.Composition
 open System.Linq
 open System.Threading
+open System.Composition
 open System.IO
 open System.Collections.Generic
-open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
 open ProtoWorkspace.HostServices
 open FSharpVSPowerTools
 
-type IHostServicesProvider =
-    abstract Assemblies : Assembly ImmutableArray
 
-[<Export>]
-type HostServicesAggregator [<ImportingConstructor>] ([<ImportMany>] hostServicesProviders : seq<IHostServicesProvider>) =
-    let builder = ImmutableHashSet.CreateBuilder<Assembly>()
-
-    do
-        for asm in MefHostServices.DefaultAssemblies do
-            builder.Add asm |> ignore
-        for provider in hostServicesProviders do
-            for asm in provider.Assemblies do
-                builder.Add asm |> ignore
-
-    let assemblies = builder.ToImmutableArray()
-    member __.CreateHostServices() = MefHostServices.Create assemblies
 
 [<CustomEquality; NoComparison>]
 type LinePositionSpanTextChange =
@@ -119,6 +103,7 @@ open FSharp.Control
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
+[<Export; Shared>]
 type FSharpWorkspace () as self =
 //    inherit Workspace(MefHostServices.DefaultHost, "FSharp")
     inherit Workspace(FSharpHostService(), "FSharp")
@@ -131,7 +116,6 @@ type FSharpWorkspace () as self =
         | true -> ()
 
 
-    let languageService = LanguageService (true,50)
 
     let projectOptions = Dictionary<ProjectId,FSharpProjectOptions>()
 

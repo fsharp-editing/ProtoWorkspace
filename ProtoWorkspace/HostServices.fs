@@ -1,7 +1,9 @@
 ﻿module ProtoWorkspace.HostServices
 
-
-
+open System
+open System.Reflection
+open System.Composition
+open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
@@ -13,8 +15,8 @@ type FSharpHostLanguageService (workspace:Workspace) =
 
     override __.Language = "FSharp"
     override __.WorkspaceServices with get () = workspace.Services
-    override __.GetService<'a when 'a :> ILanguageService>(): 'a =
-        failwithf "no services to get"
+    override __.GetService<'a when 'a :> ILanguageService>() : 'a = Unchecked.defaultof<'a>
+
 
 
 type FSharpHostWorkspaceService (workspace:Workspace,baseServices:HostWorkspaceServices) =
@@ -45,3 +47,20 @@ type FSharpHostService () =
     override __.CreateWorkspaceServices workspace =
         FSharpHostWorkspaceService(workspace,baseWorkspace.Services) :> HostWorkspaceServices
 
+
+type IHostServicesProvider =
+    abstract Assemblies : Assembly ImmutableArray
+
+[<Export>]
+type HostServicesAggregator [<ImportingConstructor>] ([<ImportMany>] hostServicesProviders : seq<IHostServicesProvider>) =
+    let builder = ImmutableHashSet.CreateBuilder<Assembly>()
+
+    do
+        for asm in MefHostServices.DefaultAssemblies do
+            builder.Add asm |> ignore
+        for provider in hostServicesProviders do
+            for asm in provider.Assemblies do
+                builder.Add asm |> ignore
+
+    let assemblies = builder.ToImmutableArray()
+    member __.CreateHostServices() = MefHostServices.Create assemblies

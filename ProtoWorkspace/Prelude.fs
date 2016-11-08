@@ -6,7 +6,6 @@ open System.IO
 open System.Diagnostics
 
 type FileName = string
-
 type FilePath = string
 
 let inline debugfn msg = Printf.kprintf Debug.WriteLine msg
@@ -692,3 +691,8 @@ module AsyncMaybe =
 let maybe = MaybeBuilder()
 let asyncMaybe = AsyncMaybeBuilder()
 
+
+[<RequireQualifiedAccess>]
+module Directory =
+
+    let fromPath path = (FileInfo path).Directory.FullName

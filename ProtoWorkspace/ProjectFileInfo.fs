@@ -221,7 +221,7 @@ module ProjectFileInfo =
             |> ResizeArray
 
         {   ProjectFilePath = projectFilePath
-            ProjectId = ProjectId.CreateNewId()
+            ProjectId = ProjectId.CreateFromSerialized(PropertyNames.ProjectGuid |> PropertyConverter.toGuid)
             ProjectGuid = projectInstance.GetPropertyValue PropertyNames.ProjectGuid |> PropertyConverter.toGuid |> Some
             Name = projectInstance.GetPropertyValue PropertyNames.ProjectName
             TargetFramework = FrameworkName(projectInstance.GetPropertyValue PropertyNames.TargetFrameworkMoniker) |> Some

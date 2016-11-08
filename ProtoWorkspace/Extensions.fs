@@ -1,6 +1,7 @@
 ﻿[<AutoOpen>]
 module ProtoWorkspace.Extensions
 open System
+open System.IO
 open System.Collections.Generic
 open Microsoft.Extensions.Logging
 open Microsoft.CodeAnalysis
@@ -57,8 +58,16 @@ type Solution with
     member self.TryGetProject (projId:ProjectId) =
         if self.ContainsProject projId then Some (self.GetProject projId) else None
 
-    /// Sequence of documents from all projects within the solution
-    member self.Documents = self.Projects |> Seq.collect (fun proj -> proj.Documents)
+    /// Sequence of DocumentInfo for all source files and addtional documents
+    /// from all of the projects within the solution
+    member self.AllDocuments =
+        self.Projects |> Seq.collect ^ fun proj ->
+            Seq.append
+                (proj.Documents |> Seq.map ^ fun doc -> doc.ToDocumentInfo())
+                (proj.AdditionalDocuments |> Seq.map ^ fun doc -> doc.ToDocumentInfo())
+
+
+    member self.Directory = (FileInfo self.FilePath).Directory.FullName
 
 
 type Project with

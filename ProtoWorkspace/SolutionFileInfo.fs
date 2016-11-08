@@ -132,14 +132,17 @@ module ProjectBlock =
             |> ignore
         builder.AppendLine "EndProject" |> string
 
-    let toProjectInfo (block: ProjectBlock) : ProjectInfo =
-        ProjectInfo.Create
-            (   id = ProjectId.CreateFromSerialized block.ProjectGuid
-            ,   version = VersionStamp.Create()
-            ,   name = block.ProjectName
-            ,   assemblyName = "fake assembly name"
-            ,   language = "en-us"
-            ,   filePath = (block.ProjectPath |> Path.GetFullPath)
+    let toProjectInfo (workspace:'a when 'a :> Workspace) (slnDirectory:string) (block: ProjectBlock) : ProjectInfo =
+        let path = Path.Combine(slnDirectory,block.ProjectPath)
+        let fileinfo = ProjectFileInfo.fromXDoc (block.ProjectPath |> Path.GetFullPath)
+        ProjectFileInfo.toProjectInfo workspace fileinfo
+//        ProjectInfo.Create
+//            (   id = ProjectId.CreateFromSerialized block.ProjectGuid
+//            ,   version = VersionStamp.Create()
+//            ,   name = block.ProjectName
+//            ,   assemblyName = "fake assembly name"
+//            ,   language = "en-us"
+//            ,   filePath = (block.ProjectPath |> Path.GetFullPath)
             // ?outputFilePath:string
             // ?compilationOptions:CompilationOptions
             // ?parseOptions:ParseOptions
@@ -150,7 +153,7 @@ module ProjectBlock =
             // ?additionalDocuments:IEnumerable<DocumentInfo>
             // ?isSubmission:bool
             // ?hostObjectType:Type
-        )
+//        )
 
 //    let toProjectInfo (projectBlock:ProjectBlock) =
 //        ProjectInfo.
@@ -162,7 +165,7 @@ type SolutionFileInfo =
       MinVSVersionLineOpt : string
       ProjectBlocks : ProjectBlock []
       GlobalSectionBlocks : SectionBlock [] }
-
+    member self.Directory = (FileInfo self.Path).Directory.FullName
 // NOTE - I'm not a fan of this parsing approach,
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix); RequireQualifiedAccess>]
@@ -218,9 +221,9 @@ module SolutionFileInfo =
         consumeEmptyLines reader
         globalSectionBlocks
 
-    let private parse path (reader : TextReader) =
+    let private parse path (reader:TextReader) =
         let headerLine1 = getNextNonEmptyLine reader
-        if isNull headerLine1 || not (headerLine1.StartsWith("Microsoft Visual Studio Solution File")) then
+        if isNull headerLine1 || not (headerLine1.StartsWith ^ "Microsoft Visual Studio Solution File") then
             parseError "Microsoft Visual Studio Solution File" headerLine1
         /// skip comment lines and empty lines
         let rec getLines() =
@@ -259,7 +262,10 @@ module SolutionFileInfo =
                 yield! getBlocks() |]
 
         // Parse project blocks while we have them
-        let projectBlocks = getBlocks()
+        let projectBlocks =
+            getBlocks() |> Array.map(fun blk ->
+                { blk with ProjectPath = Path.Combine(Directory.fromPath path,blk.ProjectPath) }
+            )
 //        projectBlocks |> Array.iter (printfn "%A")
         // We now have a global block
         let globalSectionBlocks = parseGlobal reader
@@ -279,16 +285,18 @@ module SolutionFileInfo =
 
     /// Loads the solution file at path as a string closes file and reads the string
     let load (path : string) =
+        let path = Path.GetFullPath path
         use reader = new StringReader(File.ReadAllText path)
         parse path reader
 
-    let toSolutionInfo (solutionFile: SolutionFileInfo) : SolutionInfo =
-        let projectBlocks = solutionFile.ProjectBlocks |> Array.map ProjectBlock.toProjectInfo
+    let toSolutionInfo (workspace:'a when 'a :> Workspace) (solutionFile: SolutionFileInfo) : SolutionInfo =
+
+        let projectInfos = solutionFile.ProjectBlocks |> Array.map (ProjectBlock.toProjectInfo workspace solutionFile.Directory)
 
         SolutionInfo.Create(
             SolutionId.CreateNewId(),
             VersionStamp.Create(),
             solutionFile.Path,
-            projectBlocks
+            projectInfos
         )
 
