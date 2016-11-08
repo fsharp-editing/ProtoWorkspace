@@ -1,10 +1,15 @@
 source https://www.nuget.org/api/v2
-framework: >= net45
+source https://www.myget.org/F/netcorecli-fsc-preview3/api/v3/index.json
+source https://dotnet.myget.org/F/msbuild/api/v3/index.json
+source https://dotnet.myget.org/F/dotnet-core/api/v3/index.json
+
+framework: >= net46
 redirects: on
 
-nuget FsCheck
-nuget FSharp.Compiler.Service
+
 nuget FSharp.Core
+nuget FSharp.Compiler.Service
+nuget FsCheck
 nuget FSharpVSPowerTools.Core
 nuget Microsoft.CodeAnalysis.Analyzers
 nuget Microsoft.CodeAnalysis.Workspaces.Common
@@ -17,9 +22,23 @@ nuget Microsoft.Extensions.PlatformAbstractions
 nuget NUnit
 nuget NUnit.Runners
 nuget System.Collections.Immutable
+nuget System.Composition
 nuget System.IO.FileSystem.Watcher
+nuget System.Runtime.Numerics
 nuget System.Threading.Thread
-nuget Microsoft.Build
-nuget Microsoft.Build.Framework
-nuget Microsoft.Build.Tasks.Core
-nuget Microsoft.Build.Utilities.Core
+
+#group Netcore
+nuget Microsoft.DotNet.Compiler.Common                      
+nuget Microsoft.DotNet.Cli.Utils                        
+nuget Microsoft.DotNet.ProjectModel                     
+nuget Microsoft.FSharp.Core.netcore                     
+nuget Microsoft.NETCore.App                     
+nuget FSharp.NET.Sdk        import_targets: false               
+nuget Microsoft.NET.Sdk     import_targets: false
+
+#group Build
+nuget Microsoft.Build                 15.1.0-preview-000371-00
+nuget Microsoft.Build.Runtime         15.1.0-preview-000371-00
+nuget Microsoft.Build.Framework       15.1.0-preview-000371-00
+nuget Microsoft.Build.Tasks.Core      15.1.0-preview-000371-00
+nuget Microsoft.Build.Utilities.Core  15.1.0-preview-000371-00
