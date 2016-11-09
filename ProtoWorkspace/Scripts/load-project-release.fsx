@@ -6,6 +6,7 @@
       "../Constants.fs"
       "../Environment.fs"
       "../Text.fs"
+      "../Loaders.fs"
       "../MSBuildConfig.fs"
       "../ProjectFileInfo.fs"
       "../SolutionFileInfo.fs"
