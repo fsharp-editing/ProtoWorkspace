@@ -69,7 +69,7 @@ let fswork = new FSharpWorkspace()
 
 let protopath = "ProtoWorkspace.fsproj" |> Path.GetFullPath
 
-let protoinfo = (ProjectFileInfo.fromXDoc protopath) |> ProjectFileInfo.toProjectInfo fswork
+let protoinfo = (ProjectFileInfo.create protopath) |> ProjectFileInfo.toProjectInfo fswork
 
 let protoproj = fswork.AddProject protoinfo
 ;;

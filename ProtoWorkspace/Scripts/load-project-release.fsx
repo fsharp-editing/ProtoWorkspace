@@ -3,7 +3,6 @@
 #load "load-references-release.fsx"
 #load "../Prelude.fs"
       "../Extensions.fs"
-      "../XLinq.fs"
       "../Constants.fs"
       "../Environment.fs"
       "../Text.fs"

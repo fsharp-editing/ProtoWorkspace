@@ -19,6 +19,8 @@ type ILogger with
     member self.LogWarningfn msg  = Printf.ksprintf (fun s -> self.LogWarning(s, [||])) msg
 
 
+(* CodeAnalysis Extensions *)
+
 type Document with
 
     member self.ToDocumentInfo () =
@@ -151,7 +153,7 @@ type Workspace with
     member self.ProjectDictionary() =
         let dict = Dictionary<_,_>()
         self.CurrentSolution.Projects
-        |> Seq.iter(fun proj -> dict.Add(proj.FilePath,proj.Id))
+        |> Seq.iter ^ fun proj -> dict.Add(proj.FilePath,proj.Id)
         dict
 
 
@@ -169,10 +171,24 @@ type Workspace with
     /// and a list of the paths to projects the workspace doesn't include
     member self.GetProjectIdsFromPaths paths =
         let dict = self.ProjectDictionary()
-        let pathsInside,pathsOutside = paths |> List.ofSeq |> List.partition (fun path -> dict.ContainsKey path)
-        let idmap = pathsInside |> Seq.map (fun path -> dict.[path])
+        let pathsInside,pathsOutside = paths |> List.ofSeq |> List.partition ^ fun path -> dict.ContainsKey path
+        let idmap = pathsInside |> Seq.map ^ fun path -> dict.[path]
         idmap, pathsOutside
 
 
     member self.GetProject projectName =
         self.CurrentSolution.GetProject
+
+(* MSBuild Extensions *)
+
+open Microsoft.Build
+open Microsoft.Build.Evaluation
+open Microsoft.Build.Execution
+
+
+
+type ProjectInstance with
+
+    member self.TryGetPropertyValue propertyName =
+        let value = self.GetPropertyValue propertyName
+        if String.IsNullOrEmpty value then None else Some value

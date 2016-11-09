@@ -7,7 +7,7 @@ open ProtoWorkspace
 
 let printsq sqs = sqs|>Seq.iter^printfn"%A"
 
-let testSlnPath = "../data/TestSln.sln"
+let testSlnPath = "../ProtoWorkspace.sln"
 
 let fswork = new FSharpWorkspace()
 ;;

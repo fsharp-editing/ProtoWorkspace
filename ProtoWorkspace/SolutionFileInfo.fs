@@ -134,7 +134,8 @@ module ProjectBlock =
 
     let toProjectInfo (workspace:'a when 'a :> Workspace) (slnDirectory:string) (block: ProjectBlock) : ProjectInfo =
         let path = Path.Combine(slnDirectory,block.ProjectPath)
-        let fileinfo = ProjectFileInfo.fromXDoc (block.ProjectPath |> Path.GetFullPath)
+//        let fileinfo = ProjectFileInfo.fromXDoc (block.ProjectPath |> Path.GetFullPath)
+        let fileinfo = ProjectFileInfo.create (block.ProjectPath |> Path.GetFullPath)
         ProjectFileInfo.toProjectInfo workspace fileinfo
 //        ProjectInfo.Create
 //            (   id = ProjectId.CreateFromSerialized block.ProjectGuid
@@ -291,7 +292,10 @@ module SolutionFileInfo =
 
     let toSolutionInfo (workspace:'a when 'a :> Workspace) (solutionFile: SolutionFileInfo) : SolutionInfo =
 
-        let projectInfos = solutionFile.ProjectBlocks |> Array.map (ProjectBlock.toProjectInfo workspace solutionFile.Directory)
+        let projectInfos =
+            solutionFile.ProjectBlocks
+            |> Array.filter(fun block -> not(block.ProjectTypeGuid = Constants.SolutionFolderGuid))
+            |> Array.map (ProjectBlock.toProjectInfo workspace solutionFile.Directory)
 
         SolutionInfo.Create(
             SolutionId.CreateNewId(),

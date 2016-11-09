@@ -4,8 +4,12 @@ open System
 
 [<Literal>]
 let FSharpProjectGuidStr = "F2A71F9B-5D33-465A-A702-920D77279786"
-
 let FSharpProjectGuid = Guid FSharpProjectGuidStr
+
+[<Literal>]
+let SolutionFolderGuidStr = "2150E333-8FDC-42A3-9474-1A3956D46DE8"
+let SolutionFolderGuid  = Guid SolutionFolderGuidStr
+
 
 // Common Constants
 [<Literal>]

@@ -235,6 +235,9 @@ module String =
                if (!line).Length > 0 then yield !line
                line := reader.ReadLine() |]
 
+    /// match strings with ordinal ignore case
+    let inline equalsIC (str1:string) (str2:string) = str1.Equals(str2,StringComparison.OrdinalIgnoreCase)
+
     /// Parse a string to find the first nonempty line
     /// Return null if the string was null or only contained empty lines
     let firstNonEmptyLine (str : string) =
@@ -289,8 +292,8 @@ module PropertyConverter =
     // TODO - railway this
     let toGuid propertyValue =
         match Guid.TryParse propertyValue with
-        | true, value -> value
-        | _ -> failwithf "Couldn't parse '%s' into a Guid" propertyValue
+        | true, value -> Some value
+        | _ -> None
 
     let toDefineConstants propertyValue =
         if String.IsNullOrWhiteSpace propertyValue then [||]

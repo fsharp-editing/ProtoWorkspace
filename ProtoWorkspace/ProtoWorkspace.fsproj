@@ -60,7 +60,6 @@
     <None Include="paket.references" />
     <Compile Include="Prelude.fs" />
     <Compile Include="Extensions.fs" />
-    <Compile Include="XLinq.fs" />
     <Compile Include="Constants.fs" />
     <Compile Include="Environment.fs" />
     <Compile Include="Text.fs" />
