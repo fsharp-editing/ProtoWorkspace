@@ -1,301 +1,137 @@
 ﻿
 namespace ProtoWorkspace
+open System
 
 module Constants =
-
-    open System
-
-    [<Literal>]
-    let FSharpProjectGuidStr = "F2A71F9B-5D33-465A-A702-920D77279786"
+    let [<Literal>]  FSharpProjectGuidStr = "F2A71F9B-5D33-465A-A702-920D77279786"
     let FSharpProjectGuid = Guid FSharpProjectGuidStr
-
-    [<Literal>]
-    let SolutionFolderGuidStr = "2150E333-8FDC-42A3-9474-1A3956D46DE8"
+    let [<Literal>]  SolutionFolderGuidStr = "2150E333-8FDC-42A3-9474-1A3956D46DE8"
     let SolutionFolderGuid  = Guid SolutionFolderGuidStr
-
-    [<Literal>]
-    let FSharpLanguageName = "F#"
-
-    [<Literal>]
-    let FSharpContentTypeName = "F#"
+    let [<Literal>]  FSharpLanguageName = "F#"
+    let [<Literal>]  FSharpContentTypeName = "F#"
 
     // Common Constants
-    [<Literal>]
-    let Name = "Name"
-
-    [<Literal>]
-    let None = "None"
-
-    [<Literal>]
-    let Reference = "Reference"
+    let [<Literal>]  Name = "Name"
+    let [<Literal>]  None = "None"
+    let [<Literal>]  Reference = "Reference"
 
     // Platform Constants
-    [<Literal>]
-    let X86 = "x86"
-
-    [<Literal>]
-    let X64 = "x64"
-
-    [<Literal>]
-    let AnyCPU = "AnyCPU"
+    let [<Literal>]  X86 = "x86"
+    let [<Literal>]  X64 = "x64"
+    let [<Literal>]  AnyCPU = "AnyCPU"
 
     // BuildAction Constants
-    [<Literal>]
-    let Compile = "Compile"
-
-    [<Literal>]
-    let Content = "Content"
-
-    [<Literal>]
-    let Resource = "Resource"
-
-    [<Literal>]
-    let EmbeddedResource = "EmbeddedResource"
+    let [<Literal>]  Compile = "Compile"
+    let [<Literal>]  Content = "Content"
+    let [<Literal>]  Resource = "Resource"
+    let [<Literal>]  EmbeddedResource = "EmbeddedResource"
 
     // CopyToOutputDirectory Constants
-    [<Literal>]
-    let Never = "Never"
-
-    [<Literal>]
-    let Always = "Always"
-
-    [<Literal>]
-    let PreserveNewest = "PreserveNewest"
+    let [<Literal>]  Never = "Never"
+    let [<Literal>]  Always = "Always"
+    let [<Literal>]  PreserveNewest = "PreserveNewest"
 
     // DebugType Constants
-    [<Literal>]
-    let PdbOnly = "PdbOnly"
-
-    [<Literal>]
-    let Full = "Full"
+    let [<Literal>]  PdbOnly = "PdbOnly"
+    let [<Literal>]  Full = "Full"
 
     // OutputType Constants
-    [<Literal>]
-    let Exe = "Exe"
-
-    [<Literal>]
-    let Winexe = "Winexe"
-
-    [<Literal>]
-    let Library = "Library"
-
-    [<Literal>]
-    let Module = "Module"
+    let [<Literal>]  Exe = "Exe"
+    let [<Literal>]  Winexe = "Winexe"
+    let [<Literal>]  Library = "Library"
+    let [<Literal>]  Module = "Module"
 
     // XML Attribute Name Constants
-    [<Literal>]
-    let DefaultTargets = "DefaultTargets"
-
-    [<Literal>]
-    let ToolsVersion = "ToolsVersion"
-
-    [<Literal>]
-    let Include = "Include"
-
-    [<Literal>]
-    let Condition = "Condition"
+    let [<Literal>]  DefaultTargets = "DefaultTargets"
+    let [<Literal>]  ToolsVersion = "ToolsVersion"
+    let [<Literal>]  Include = "Include"
+    let [<Literal>]  Condition = "Condition"
 
     // MSBuild XML Element Constants
-    [<Literal>]
-    let Project = "Project"
 
-    [<Literal>]
-    let ItemGroup = "ItemGroup"
-
-    [<Literal>]
-    let PropertyGroup = "PropertyGroup"
-
-    [<Literal>]
-    let ProjectReference = "ProjectReference"
+    let [<Literal>]  Project = "Project"
+    let [<Literal>]  ItemGroup = "ItemGroup"
+    let [<Literal>]  PropertyGroup = "PropertyGroup"
+    let [<Literal>]  ProjectReference = "ProjectReference"
 
     // XML Property Constants (found in PropertyGroups)
-    [<Literal>]
-    let AssemblyName = "AssemblyName"
-
-    [<Literal>]
-    let RootNamespace = "RootNamespace"
-
-    [<Literal>]
-    let Configuration = "Configuration"
-
-    [<Literal>]
-    let Platform = "Platform"
-
-    [<Literal>]
-    let SchemaVersion = "SchemaVersion"
-
-    [<Literal>]
-    let ProjectGuid = "ProjectGuid"
-
-    [<Literal>]
-    let ProjectType = "ProjectType"
-
-    [<Literal>]
-    let OutputType = "OutputType"
-
-    [<Literal>]
-    let TargetFrameworkVersion = "TargetFrameworkVersion"
-
-    [<Literal>]
-    let TargetFrameworkProfile = "TargetFrameworkProfile"
-
-    [<Literal>]
-    let AutoGenerateBindingRedirects = "AutoGenerateBindingRedirects"
-
-    [<Literal>]
-    let TargetFSharpCoreVersion = "TargetFSharpCoreVersion"
-
-    [<Literal>]
-    let DebugSymbols = "DebugSymbols"
-
-    [<Literal>]
-    let DebugType = "DebugType"
-
-    [<Literal>]
-    let Optimize = "Optimize"
-
-    [<Literal>]
-    let Tailcalls = "Tailcalls"
-
-    [<Literal>]
-    let OutputPath = "OutputPath"
-
-    [<Literal>]
-    let CompilationConstants = "DefineConstants"
-
-    [<Literal>]
-    let WarningLevel = "WarningLevel"
-
-    [<Literal>]
-    let PlatformTarget = "PlatformTarget"
-
-    [<Literal>]
-    let DocumentationFile = "DocumentationFile"
-
-    [<Literal>]
-    let Prefer32Bit = "Prefer32Bit"
-
-    [<Literal>]
-    let OtherFlags = "OtherFlags"
+    let [<Literal>]  AssemblyName = "AssemblyName"
+    let [<Literal>]  RootNamespace = "RootNamespace"
+    let [<Literal>]  Configuration = "Configuration"
+    let [<Literal>]  Platform = "Platform"
+    let [<Literal>]  SchemaVersion = "SchemaVersion"
+    let [<Literal>]  ProjectGuid = "ProjectGuid"
+    let [<Literal>]  ProjectType = "ProjectType"
+    let [<Literal>]  OutputType = "OutputType"
+    let [<Literal>]  TargetFrameworkVersion = "TargetFrameworkVersion"
+    let [<Literal>]  TargetFrameworkProfile = "TargetFrameworkProfile"
+    let [<Literal>]  AutoGenerateBindingRedirects = "AutoGenerateBindingRedirects"
+    let [<Literal>]  TargetFSharpCoreVersion = "TargetFSharpCoreVersion"
+    let [<Literal>]  DebugSymbols = "DebugSymbols"
+    let [<Literal>]  DebugType = "DebugType"
+    let [<Literal>]  Optimize = "Optimize"
+    let [<Literal>]  Tailcalls = "Tailcalls"
+    let [<Literal>]  OutputPath = "OutputPath"
+    let [<Literal>]  CompilationConstants = "DefineConstants"
+    let [<Literal>]  WarningLevel = "WarningLevel"
+    let [<Literal>]  PlatformTarget = "PlatformTarget"
+    let [<Literal>]  DocumentationFile = "DocumentationFile"
+    let [<Literal>]  Prefer32Bit = "Prefer32Bit"
+    let [<Literal>]  OtherFlags = "OtherFlags"
 
     // XML Elements
-    [<Literal>]
-    let CopyToOutputDirectory = "CopyToOutputDirectory"
-
-    [<Literal>]
-    let HintPath = "HintPath"
-
-    [<Literal>]
-    let Private = "Private"
-
-    [<Literal>]
-    let SpecificVersion = "SpecificVersion"
-
-    [<Literal>]
-    let Link = "Link"
-
-    [<Literal>]
-    let Paket = "Paket"
-
-    [<Literal>]
-    let XmlDecl = @"<?xml version='1.0' encoding='utf-8'?>"
-
-    [<Literal>]
-    let Xmlns = "http://schemas.microsoft.com/developer/msbuild/2003"
-
+    let [<Literal>]  CopyToOutputDirectory = "CopyToOutputDirectory"
+    let [<Literal>]  HintPath = "HintPath"
+    let [<Literal>]  Private = "Private"
+    let [<Literal>]  SpecificVersion = "SpecificVersion"
+    let [<Literal>]  Link = "Link"
+    let [<Literal>]  Paket = "Paket"
+    let [<Literal>]  XmlDecl = @"<?xml version='1.0' encoding='utf-8'?>"
+    let [<Literal>]  Xmlns = "http://schemas.microsoft.com/developer/msbuild/2003"
 
 
 [<RequireQualifiedAccess>]
 /// MSBuild Properties
 module Property =
-    [<Literal>]
-    let AllowUnsafeBlocks = "AllowUnsafeBlocks"
-
-    [<Literal>]
-    let AssemblyName = "AssemblyName"
-
-    [<Literal>]
-    let AssemblyOriginatorKeyFile = "AssemblyOriginatorKeyFile"
-
-    [<Literal>]
-    let BuildProjectReferences = "BuildProjectReferences"
-
-    [<Literal>]
-    let DefineConstants = "DefineConstants"
-
-    [<Literal>]
-    let DesignTimeBuild = "DesignTimeBuild"
-
-    [<Literal>]
-    let DocumentationFile = "DocumentationFile"
-
-    [<Literal>]
-    let LangVersion = "LangVersion"
-
-    [<Literal>]
-    let OutputType = "OutputType"
-
-    [<Literal>]
-    let MSBuildExtensionsPath = "MSBuildExtensionsPath"
-
-    [<Literal>]
-    let ProjectGuid = "ProjectGuid"
-
-    [<Literal>]
-    let ProjectName = "ProjectName"
-
-    [<Literal>]
-    let ResolveReferenceDependencies = "ResolveReferenceDependencies"
-
-    [<Literal>]
-    let SignAssembly = "SignAssembly"
-
-    [<Literal>]
-    let SolutionDir = "SolutionDir"
-
-    [<Literal>]
-    let TargetFrameworkMoniker = "TargetFrameworkMoniker"
-
-    [<Literal>]
-    let TargetPath = "TargetPath"
-
-    [<Literal>]
-    let VisualStudioVersion = "VisualStudioVersion"
+    let [<Literal>] AllowUnsafeBlocks = "AllowUnsafeBlocks"
+    let [<Literal>] AssemblyName = "AssemblyName"
+    let [<Literal>] AssemblyOriginatorKeyFile = "AssemblyOriginatorKeyFile"
+    let [<Literal>] BuildProjectReferences = "BuildProjectReferences"
+    let [<Literal>] DefineConstants = "DefineConstants"
+    let [<Literal>] DesignTimeBuild = "DesignTimeBuild"
+    let [<Literal>] DocumentationFile = "DocumentationFile"
+    let [<Literal>] LangVersion = "LangVersion"
+    let [<Literal>] OutputType = "OutputType"
+    let [<Literal>] MSBuildExtensionsPath = "MSBuildExtensionsPath"
+    let [<Literal>] ProjectGuid = "ProjectGuid"
+    let [<Literal>] ProjectName = "ProjectName"
+    let [<Literal>] ResolveReferenceDependencies = "ResolveReferenceDependencies"
+    let [<Literal>] SignAssembly = "SignAssembly"
+    let [<Literal>] SolutionDir = "SolutionDir"
+    let [<Literal>] TargetFrameworkMoniker = "TargetFrameworkMoniker"
+    let [<Literal>] TargetPath = "TargetPath"
+    let [<Literal>] VisualStudioVersion = "VisualStudioVersion"
 
 
 [<RequireQualifiedAccess>]
 /// MSBuild Project Target Names
 module TargetName =
-    [<Literal>]
-    let ResolveReferences = "ResolveReferences"
+
+    let [<Literal>] ResolveReferences = "ResolveReferences"
 
 
 [<RequireQualifiedAccess>]
 /// MSBuild Project Item Names
 module ItemName =
-    [<Literal>]
-    let Analyzer = "Analyzer"
-
-    [<Literal>]
-    let Compile = "Compile"
-
-    [<Literal>]
-    let None = "None"
-
-    [<Literal>]
-    let ProjectReference = "ProjectReference"
-
-    [<Literal>]
-    let ReferencePath = "ReferencePath"
+    let [<Literal>] Analyzer = "Analyzer"
+    let [<Literal>] Compile = "Compile"
+    let [<Literal>] None = "None"
+    let [<Literal>] ProjectReference = "ProjectReference"
+    let [<Literal>] ReferencePath = "ReferencePath"
 
 [<RequireQualifiedAccess>]
 /// MSBuild Project Metadata Names
 module MetadataName =
-    [<Literal>]
-    let FullPath = "FullPath"
-
-    [<Literal>]
-    let Project = "Project"
-
-    [<Literal>]
-    let ReferenceSourceTarget = "ReferenceSourceTarget"
+    let [<Literal>] FullPath = "FullPath"
+    let [<Literal>] Project = "Project"
+    let [<Literal>] ReferenceSourceTarget = "ReferenceSourceTarget"
