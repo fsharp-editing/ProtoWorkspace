@@ -105,6 +105,7 @@ NUGET
       System.Runtime.InteropServices.RuntimeInformation (>= 4.0) - framework: >= net451
     Microsoft.Extensions.Options (1.0) - framework: >= net451
     Microsoft.Extensions.PlatformAbstractions (1.0)
+    Newtonsoft.Json (9.0.1)
     NUnit (3.5)
     NUnit.ConsoleRunner (3.5)
     NUnit.Extension.NUnitProjectLoader (3.5)
