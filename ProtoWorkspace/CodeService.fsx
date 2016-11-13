@@ -16,7 +16,6 @@ open Microsoft.Build.Utilities
 open System.Xml
 open System.Xml.Linq
 open ProtoWorkspace
-open ProtoWorkspace.XLinq
 open System.Threading
 
 
@@ -33,7 +32,7 @@ let xdoc = (library1path |> File.ReadAllText |> XDocument.Parse).Root
 let fswork = new FSharpWorkspace()
 
 
-let lib1info = (ProjectFileInfo.fromXDoc library1path) |> ProjectFileInfo.toProjectInfo fswork
+let lib1info = (ProjectFileInfo.create library1path) |> ProjectFileInfo.toProjectInfo fswork
 
 let lib1proj = fswork.AddProject lib1info
 ;;

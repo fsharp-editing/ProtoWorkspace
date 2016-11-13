@@ -25,11 +25,13 @@ type LineScanner(line : string) =
             currentPosition <- index + delimiter.Length
             upToDelimiter
 
-type SectionBlock =
-    { BlockType : string
-      ParenthesizedName : string
-      Value : string
-      KeyMap : (string * string) [] }
+type SectionBlock = {
+    BlockType : string
+    ParenthesizedName : string
+    Value : string
+    KeyMap : (string * string) []
+}
+
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix); RequireQualifiedAccess>]
 module SectionBlock =
@@ -49,25 +51,27 @@ module SectionBlock =
         let sectionValue = scanner.ReadRest()
         printfn "section blocktype is - %s" blockType
         printfn "End%s" blockType
-        let rec findPairs() =
-            [| match reader.ReadLine() with
-               | null -> ()
-               | line ->
-                   match line.TrimStart [||] with
-                   | txt when txt = "End" + blockType -> ()
-                   | "" -> yield! findPairs()
-                   | line ->
-                       let scanner = LineScanner line
-                       let key = scanner.ReadUpToAndEat " = "
-                       let value = scanner.ReadRest()
-                       yield (key, value)
-                       yield! findPairs() |]
+        let rec findPairs() = [|
+            match reader.ReadLine() with
+            | null -> ()
+            | line ->
+                match line.TrimStart [||] with
+                | txt when txt = "End" + blockType -> ()
+                | "" -> yield! findPairs()
+                | line ->
+                    let scanner = LineScanner line
+                    let key = scanner.ReadUpToAndEat " = "
+                    let value = scanner.ReadRest()
+                    yield (key, value)
+                    yield! findPairs()
+        |]
 
         let keyMap = findPairs()
-        { BlockType = blockType
-          ParenthesizedName = parenthesizedName
-          Value = sectionValue
-          KeyMap = keyMap }
+        {   BlockType = blockType
+            ParenthesizedName = parenthesizedName
+            Value = sectionValue
+            KeyMap = keyMap
+        }
 
     let getText indent (block : SectionBlock) =
         let builder =
@@ -199,7 +203,7 @@ module SolutionFileInfo =
             reader.ReadLine() |> ignore
 
     let inline private parseError expected actual =
-        raise (exn (sprintf "invalid global section - expected '%s', was - '%s'" expected actual))
+        raise ^ exn ^ sprintf "invalid global section - expected '%s', was - '%s'" expected actual
 
     let private parseCheck expected actual =
         if expected <> actual then parseError expected actual
@@ -210,11 +214,12 @@ module SolutionFileInfo =
         let firstline = getNextNonEmptyLine reader
 //        printfn "%s" firstline
         parseCheck "Global" firstline
-        let rec getBlocks() =
-            [|  if reader.Peek() = -1 || not (Char.IsWhiteSpace(reader.Peek() |> char)) then ()
-                else
-                yield SectionBlock.parse reader
-                yield! getBlocks() |]
+        let rec getBlocks() = [|
+            if reader.Peek() = -1 || not (Char.IsWhiteSpace(reader.Peek() |> char)) then ()
+            else
+            yield SectionBlock.parse reader
+            yield! getBlocks()
+        |]
 
         let globalSectionBlocks = getBlocks()
 //        printfn "%A" globalSectionBlocks
@@ -227,7 +232,7 @@ module SolutionFileInfo =
         if isNull headerLine1 || not (headerLine1.StartsWith ^ "Microsoft Visual Studio Solution File") then
             parseError "Microsoft Visual Studio Solution File" headerLine1
         /// skip comment lines and empty lines
-        let rec getLines() =
+        let rec getLines () =
             [| // finish if not a commentline, empty line, or if it's the end of the file
                 if reader.Peek() = -1 || not (Array.contains (reader.Peek() |> char) [| '#'; '\r'; '\n' |]) then ()
                 else if reader.Peek() = -1 then ()
@@ -248,8 +253,8 @@ module SolutionFileInfo =
         let minimumVisualStudioVersionLineOpt =
             if char (reader.Peek()) = 'M' then
                 let line = getNextNonEmptyLine reader
-                if not (line.StartsWith "MinimumVisualStudioVersion") then
-                    raise (exn "invalid global section - didn't start with 'MinimumVisualStudioVersion'")
+                if not ^ line.StartsWith "MinimumVisualStudioVersion" then
+                    raise ^ exn "invalid global section - didn't start with 'MinimumVisualStudioVersion'"
                 line
             else String.Empty // should this be null?
 
@@ -264,19 +269,20 @@ module SolutionFileInfo =
 
         // Parse project blocks while we have them
         let projectBlocks =
-            getBlocks() |> Array.map(fun blk ->
+            getBlocks() |> Array.map ^ fun blk ->
                 { blk with ProjectPath = Path.Combine(Directory.fromPath path,blk.ProjectPath) }
-            )
+
 //        projectBlocks |> Array.iter (printfn "%A")
         // We now have a global block
         let globalSectionBlocks = parseGlobal reader
-        if reader.Peek() <> -1 then raise (exn "Should be at the end of file")
-        { Path = path
-          HeaderLines = headerLines
-          VSVersionLineOpt = visualStudioVersionLineOpt
-          MinVSVersionLineOpt = minimumVisualStudioVersionLineOpt
-          ProjectBlocks = projectBlocks
-          GlobalSectionBlocks = globalSectionBlocks }
+        if reader.Peek() <> -1 then raise ^ exn "Should be at the end of file"
+        {   Path = path
+            HeaderLines = headerLines
+            VSVersionLineOpt = visualStudioVersionLineOpt
+            MinVSVersionLineOpt = minimumVisualStudioVersionLineOpt
+            ProjectBlocks = projectBlocks
+            GlobalSectionBlocks = globalSectionBlocks
+        }
 
     /// Loads the solution file at path as a filestream
     let loadFile (path : string) =
@@ -294,8 +300,8 @@ module SolutionFileInfo =
 
         let projectInfos =
             solutionFile.ProjectBlocks
-            |> Array.filter(fun block -> not(block.ProjectTypeGuid = Constants.SolutionFolderGuid))
-            |> Array.map (ProjectBlock.toProjectInfo workspace solutionFile.Directory)
+            |> Array.filter ^ fun block -> not(block.ProjectTypeGuid = Constants.SolutionFolderGuid)
+            |> Array.map ^ ProjectBlock.toProjectInfo workspace solutionFile.Directory
 
         SolutionInfo.Create(
             SolutionId.CreateNewId(),

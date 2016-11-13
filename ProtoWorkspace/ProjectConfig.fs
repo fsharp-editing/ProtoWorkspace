@@ -2,7 +2,7 @@
 
 open System.IO
 
-type ProjectSettings = 
+type ProjectSettings =
     { IsForStandaloneScript : bool
       ProjectFile : FileName
       TargetFramework : FSharpTargetFramework
@@ -13,41 +13,41 @@ type ProjectSettings =
       References : FileName []
       ProjectReferences : FileName [] }
 
-type ProjectConfig = 
+type ProjectConfig =
     | FsProject of ProjectSettings
     | FsxProject of ProjectSettings
     | SigProject of ProjectSettings
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module ProjectConfig = 
+module ProjectConfig =
     /// F# project file extension - `.fsproj`
     [<Literal>]
     let fsprojext = ".fsproj"
-    
+
     (* Compiler Flags *)
 
     /// Compiler Flag `--noframework`
     [<Literal>]
     let noframeworkFlag = "--noframework"
-    
+
     /// Compiler Flag `--debug-`
     [<Literal>]
     let debugFlag = "--debug-"
-    
+
     /// Compiler Flag `--optimize-`
     [<Literal>]
     let optimizeFlag = "--optimize-"
-    
+
     /// Compiler Flag `--tailcalls-`
     [<Literal>]
     let tailcallsFlag = "--tailcalls-"
-    
+
     /// Checks a file path to see if the extension matches `.fsproj`
     let isFSharpProject projectPath = String.equalsIgnoreCase (Path.GetExtension projectPath) fsprojext
-    
+
     /// Creates a ProjectConfig for a normal F# Project
-    let fsProjectConfig (projectPath, targetFramework, fscVersion, fscOptions, srcFiles, outputPath, references, 
-                         projectReferences) = 
+    let fsProjectConfig (projectPath, targetFramework, fscVersion, fscOptions, srcFiles, outputPath, references,
+                         projectReferences) =
         { IsForStandaloneScript = false
           ProjectFile = projectPath
           TargetFramework = targetFramework
@@ -58,9 +58,9 @@ module ProjectConfig =
           References = references
           ProjectReferences = projectReferences }
         |> FsProject
-    
+
     /// Creates an ad-hoc ProjectConfig to integrate generated signatures into the project system
-    let signatureProjectConfig (sigpath : FileName) (project : ProjectSettings) = 
+    let signatureProjectConfig (sigpath : FileName) (project : ProjectSettings) =
         let sigProjectName = sigpath + fsprojext
         let sourceFiles = [| sigpath |]
         let flags = [| noframeworkFlag; debugFlag; optimizeFlag; tailcallsFlag |]
@@ -74,9 +74,9 @@ module ProjectConfig =
           References = [||]
           ProjectReferences = [||] }
         |> SigProject
-    
+
     /// Creates a standalone ProjectConfig for an fsx script file
-    let fsxProjectConfig (fsxPath : FileName) (compilerVersion) = 
+    let fsxProjectConfig (fsxPath : FileName) (compilerVersion) =
         let fsxProjectName = fsxPath + fsprojext
         let flags = [| noframeworkFlag; debugFlag; optimizeFlag; tailcallsFlag |]
         { IsForStandaloneScript = true

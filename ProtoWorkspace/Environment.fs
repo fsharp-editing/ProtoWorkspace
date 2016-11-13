@@ -22,15 +22,15 @@ module Environment =
         | NET_4_6
 
     type FSharpCompilerVersion =
-        // F# 2.0
+        /// F# 2.0 - 4.0.0.0
         | FSharp_2_0
-        // F# 3.0
+        /// F# 3.0 - 4.3.0.0
         | FSharp_3_0
-        // F# 3.1
+        /// F# 3.1 - 4.3.1.0
         | FSharp_3_1
-        // F# 4.0
+        /// F# 4.0 - 4.4.0.0
         | FSharp_4_0
-        // F# 4.1
+        /// F# 4.1 - 4.4.1.0
         | FSharp_4_1
 
         override x.ToString() =

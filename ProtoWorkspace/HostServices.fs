@@ -13,7 +13,7 @@ open Microsoft.CodeAnalysis.Host.Mef
 type FSharpHostLanguageService (workspace:Workspace) =
     inherit HostLanguageServices()
 
-    override __.Language = "FSharp"
+    override __.Language = Constants.FSharpLanguageName
     override __.WorkspaceServices with get () = workspace.Services
     override __.GetService<'a when 'a :> ILanguageService>() : 'a = Unchecked.defaultof<'a>
 
@@ -31,9 +31,9 @@ type FSharpHostWorkspaceService (workspace:Workspace,baseServices:HostWorkspaceS
 
     override __.Workspace = workspace
 
-    override __.IsSupported languageName = languageName = "FSharp"
+    override __.IsSupported languageName = languageName = Constants.FSharpLanguageName
 
-    override __.SupportedLanguages = seq ["FSharp"]
+    override __.SupportedLanguages = seq [Constants.FSharpLanguageName]
 
     override __.GetLanguageServices _ = languageService :> HostLanguageServices
 

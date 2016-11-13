@@ -16,13 +16,13 @@ open FSharpVSPowerTools
 
 
 [<CustomEquality; NoComparison>]
-type LinePositionSpanTextChange =
-    { NewText : string
-      StartLine : int
-      StartColumn : int
-      EndLine : int
-      EndColumn : int }
-
+type LinePositionSpanTextChange = {
+    NewText     : string
+    StartLine   : int
+    StartColumn : int
+    EndLine     : int
+    EndColumn   : int
+} with
     override self.Equals obj =
         match obj with
         | :? LinePositionSpanTextChange as other ->
@@ -34,22 +34,27 @@ type LinePositionSpanTextChange =
         self.NewText.GetHashCode() * (23 + self.StartLine) * (29 + self.StartColumn) * (31 + self.EndLine)
         * (37 + self.EndColumn)
 
-[<NoComparison>]
-type Request =
-    { Line : int
-      Column : int
-      Buffer : string
-      FileName : string
-      FromDisk : bool
-      Changes : LinePositionSpanTextChange list }
 
-type ChangeBufferRequest =
-    { FileName : string
-      StartLine : int
-      StartColumn : int
-      EndLine : int
-      EndColumn : int
-      NewText : string }
+[<NoComparison>]
+type RequestB = {
+    Line     : int
+    Column   : int
+    Buffer   : string
+    FileName : string
+    FromDisk : bool
+    Changes  : LinePositionSpanTextChange list
+}
+
+
+type ChangeBufferRequest = {
+    FileName    : string
+    StartLine   : int
+    StartColumn : int
+    EndLine     : int
+    EndColumn   : int
+    NewText     : string
+}
+
 
 module Workspace =
     let convertTextChanges (document : Document) (changes : TextChange seq) = async {
@@ -103,23 +108,21 @@ open FSharp.Control
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
+
 [<Export; Shared>]
 type FSharpWorkspace () as self =
 //    inherit Workspace(MefHostServices.DefaultHost, "FSharp")
-    inherit Workspace(FSharpHostService(), "FSharp")
+    inherit Workspace(FSharpHostService(), Constants.FSharpLanguageName )
     let bufferManager = new BufferManager(self)
     let disposables = ResizeArray<IDisposable>()
+    let checker = FSharpChecker.Create()
 
     let checkProjectId (projectId:ProjectId) =
         match self.CurrentSolution.ContainsProject projectId with
         | false -> failwithf "The workspace does not contain a project with the id '%s'" ^ string projectId.Id
         | true -> ()
 
-
-
     let projectOptions = Dictionary<ProjectId,FSharpProjectOptions>()
-
-
 
     // TODO -
     //  What additional data caches does the workspace need?
@@ -130,29 +133,32 @@ type FSharpWorkspace () as self =
         disposables.Add bufferManager
 
 
+    member __.Checker : FSharpChecker = checker
+
     //let activeDocuments = HashSet<DocumentId>()
     //new() = new FSharpWorkspace(HostServicesAggregator(Seq.empty))
     override __.CanOpenDocuments = true
     override __.CanApplyChange _ = true
 
     /// Adds a document to the workspace.
-    member self.AddDocument(documentInfo : DocumentInfo) =
+    member self.AddDocument (documentInfo:DocumentInfo) =
         checkNullArg documentInfo "documentInfo"
         base.OnDocumentAdded documentInfo
         self.CurrentSolution.GetDocument documentInfo.Id
 
     /// Adds a document to a project in the workspace.
-    member __.AddDocument(projectId : ProjectId, name : string, text : SourceText) =
+    member __.AddDocument (projectId:ProjectId, name:string, text:SourceText) =
         checkNullArg projectId "projectId"
         checkNullArg name "name"
         checkNullArg text "text"
-        DocumentInfo.Create
-            (DocumentId.CreateNewId projectId, name,
-             loader = TextLoader.From(TextAndVersion.Create(text, VersionStamp.Create())))
+        DocumentInfo.Create(
+            DocumentId.CreateNewId projectId, name,
+            loader = TextLoader.From ^ TextAndVersion.Create(text, VersionStamp.Create())
+        )
 
 
     /// Puts the specified document into the open state.
-    override __.OpenDocument(docId, activate) =
+    override __.OpenDocument (docId, activate) =
         let doc = base.CurrentSolution.GetDocument docId
         if isNull doc then ()
         else
@@ -173,7 +179,7 @@ type FSharpWorkspace () as self =
             let versionTask = doc.GetTextVersionAsync CancellationToken.None
             versionTask.Wait CancellationToken.None
             let version = versionTask.Result
-            let loader = TextLoader.From(TextAndVersion.Create(text, version, doc.FilePath))
+            let loader = TextLoader.From ^ TextAndVersion.Create(text, version, doc.FilePath)
             base.OnDocumentClosed(docId, loader)
 
 
@@ -195,21 +201,36 @@ type FSharpWorkspace () as self =
         projectInfos |> Seq.iter self.OnProjectAdded
         base.UpdateReferencesAfterAdd()
 
+
     /// Adds an entire solution to the workspace, replacing any existing solution.
-    member self.AddSolution (solutionInfo:SolutionInfo) =
+    member self.AddSolutionInfo (solutionInfo:SolutionInfo) =
         checkNullArg solutionInfo "solutionInfo"
         base.OnSolutionAdded solutionInfo
         base.UpdateReferencesAfterAdd()
         self.CurrentSolution
 
-    member __.AddProjectReference(projectId, projectReference) =
-        base.OnProjectReferenceAdded(projectId, projectReference)
 
-    member __.AddMetadataReference(projectId, metadataReference) =
-        base.OnMetadataReferenceAdded(projectId, metadataReference)
+//    /// Adds an entire solution to the workspace, replacing any existing solution.
+//    member self.AddSolution (solution:Solution) =
+//        checkNullArg solution "solution"
+//        let fn (arg:WorkspaceChangeEventArgs) =
+//            arg.
+//        base.OnSolutionAdded solution
+//        base.UpdateReferencesAfterAdd()
+//        self.CurrentSolution
 
-    member __.RemoveMetadataReference(projectId, metadataReference) =
-        base.OnMetadataReferenceRemoved(projectId, metadataReference)
+
+
+    member __.AddProjectReference (projectId, projectReference) =
+        base.OnProjectReferenceAdded (projectId, projectReference)
+
+
+    member __.AddMetadataReference (projectId, metadataReference) =
+        base.OnMetadataReferenceAdded (projectId, metadataReference)
+
+
+    member __.RemoveMetadataReference (projectId, metadataReference) =
+        base.OnMetadataReferenceRemoved (projectId, metadataReference)
 
     //    member __. AddDocument documentInfo =
     //        base.OnDocumentAdded documentInfo
@@ -217,12 +238,13 @@ type FSharpWorkspace () as self =
 
     member __.RemoveProject projectId = base.OnProjectRemoved projectId
 
-    member __.SetCompilationOptions(projectId, options) = base.OnCompilationOptionsChanged(projectId, options)
+    member __.SetCompilationOptions (projectId, options) = base.OnCompilationOptionsChanged(projectId, options)
 
-    member __.SetParseOptions(projectId, parseOptions) = base.OnParseOptionsChanged(projectId, parseOptions)
+    member __.SetParseOptions (projectId, parseOptions) = base.OnParseOptionsChanged(projectId, parseOptions)
 
-    member __.OnDocumentChanged(documentId, text) =
+    member __.OnDocumentChanged (documentId, text) =
         base.OnDocumentTextChanged(documentId, text, PreservationMode.PreserveIdentity)
+
 
     member __.TryGetDocumentId filePath =
         let documentIds = base.CurrentSolution.GetDocumentIdsWithFilePath filePath
@@ -230,9 +252,11 @@ type FSharpWorkspace () as self =
         | null -> None
         | docId -> Some docId
 
+
     member self.GetDocuments filePath =
         base.CurrentSolution.GetDocumentIdsWithFilePath(filePath)
             .Select(fun docId -> self.CurrentSolution.GetDocument docId)
+
 
     member self.TryGetDocument filePath =
         self.TryGetDocumentId filePath |> Option.map (fun docId -> self.CurrentSolution.GetDocument docId)
@@ -259,22 +283,23 @@ and internal BufferManager(workspace : FSharpWorkspace) as self =
         let sourceText = SourceText.From fileContent
 
         let documents : DocumentInfo list =
-            (projects, []) ||> Seq.foldBack (fun project docs ->
+            (projects, []) ||> Seq.foldBack ^ fun project docs ->
                 let docId = DocumentId.CreateNewId project.Id
                 let version = VersionStamp.Create()
                 let docInfo =
                     DocumentInfo.Create
                         (docId, fileName, filePath = fileName,
                         loader = TextLoader.From(TextAndVersion.Create(sourceText, version)))
-                docInfo :: docs)
+                docInfo :: docs
         lock lockObj (fun () ->
             let docIds = documents |> List.map (fun doc -> doc.Id)
             transientDocuments.Add(fileName, docIds)
             transientDocumentIds.UnionWith docIds)
-        documents |> List.iter (fun doc -> workspace.AddDocument doc |> ignore)
+        documents |> List.iter ^ fun doc -> workspace.AddDocument doc |> ignore
         true
 
-    member __.UpdateBuffer(request : Request) = async {
+
+    member __.UpdateBuffer (request:RequestB) = async {
         let buffer =
             if request.FromDisk then File.ReadAllText request.FileName
             else request.Buffer
@@ -284,23 +309,24 @@ and internal BufferManager(workspace : FSharpWorkspace) as self =
         if not documentIds.IsEmpty then
             if changes = [] then
                 let sourceText = SourceText.From buffer
-                documentIds |> Seq.iter (fun docId -> workspace.OnDocumentChanged(docId, sourceText))
+                documentIds |> Seq.iter ^ fun docId -> workspace.OnDocumentChanged(docId, sourceText)
             else
             for docId in documentIds do
                 let doc = workspace.CurrentSolution.GetDocument docId
                 let! sourceText = doc.GetTextAsync() |> Async.AwaitTask
                 let sourceText =
-                    (sourceText, changes) ||> List.fold (fun sourceText change ->
+                    (sourceText, changes) ||> List.fold ^ fun sourceText change ->
                         let startOffset =
-                            sourceText.Lines.GetPosition ^ LinePosition(change.StartLine, change.StartLine)
+                            sourceText.Lines.GetPosition ^ LinePosition (change.StartLine, change.StartLine)
                         let endOffset =
-                            sourceText.Lines.GetPosition ^ LinePosition(change.EndLine, change.EndColumn)
+                            sourceText.Lines.GetPosition ^ LinePosition (change.EndLine, change.EndColumn)
                         sourceText.WithChanges
-                            [| TextChange(TextSpan(startOffset, endOffset - startOffset), change.NewText) |])
+                            [| TextChange(TextSpan(startOffset, endOffset - startOffset), change.NewText) |]
                 workspace.OnDocumentChanged(docId, sourceText)
         else
         if isNotNull buffer then tryAddTransientDocument request.FileName buffer |> ignore
     }
+
 
     member __.UpdateChangeBuffer(request : ChangeBufferRequest) = async {
         if isNull request.FileName then ()
@@ -321,22 +347,22 @@ and internal BufferManager(workspace : FSharpWorkspace) as self =
             tryAddTransientDocument request.FileName request.NewText |> ignore
     }
 
-    member __.OnWorkspaceChanged(args : WorkspaceChangeEventArgs) =
+    member __.OnWorkspaceChanged (args:WorkspaceChangeEventArgs) =
         let filename =
             match args.Kind with
-            | WorkspaceChangeKind.DocumentAdded -> (args.NewSolution.GetDocument args.DocumentId).FilePath
+            | WorkspaceChangeKind.DocumentAdded   -> (args.NewSolution.GetDocument args.DocumentId).FilePath
             | WorkspaceChangeKind.DocumentRemoved -> (args.OldSolution.GetDocument args.DocumentId).FilePath
             | _ -> String.Empty
         if String.IsNullOrEmpty filename then ()
         else
-        lock lockObj (fun () ->
+        lock lockObj ^ fun () ->
             match Dict.tryFind filename transientDocuments with
             | None -> ()
             | Some docIds ->
                 transientDocuments.Remove filename |> ignore
                 for docId in docIds do
                     workspace.RemoveDocument docId |> ignore
-                    transientDocumentIds.Remove docId |> ignore)
+                    transientDocumentIds.Remove docId |> ignore
 
     interface IDisposable with
         member __.Dispose() =

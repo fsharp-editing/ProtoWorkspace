@@ -24,7 +24,7 @@ let sln = fswork.AddSolution slnInfo
 string fswork.CurrentSolution.FilePath
 
 fswork.CurrentSolution.Projects |> Seq.iter(fun p->
-    let docs = p.Documents |> Seq.map (fun p -> "  " + p.Name) |> String.concat "\n"
-    printfn "%s -\n%s" p.Name docs)
+    let docs = p.Documents |> Seq.map (fun p -> "  - " + p.Name) |> String.concat "\n"
+    printfn "%s\n%s" p.Name docs)
 ;;
 fswork.CurrentSolution.Projects

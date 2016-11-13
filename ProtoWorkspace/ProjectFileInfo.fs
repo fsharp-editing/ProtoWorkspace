@@ -11,7 +11,6 @@ open Microsoft.Build.Evaluation
 open Microsoft.Build.Execution
 open System.Xml
 open System.Xml.Linq
-open ProtoWorkspace.MSBuildInfo
 
 /// Specifies the version of the F# compiler that should be used
 type LanguageVersion =
@@ -55,27 +54,24 @@ type OutputType =
     /// Build a module that can be added to another assembly (.netmodule)
     | Module
 
-    override self.ToString() =
-        self |> function
-        | Exe -> Constants.Exe
-        | Winexe -> Constants.Winexe
+    override self.ToString() = self |> function
+        | Exe     -> Constants.Exe
+        | Winexe  -> Constants.Winexe
         | Library -> Constants.Library
-        | Module -> Constants.Module
+        | Module  -> Constants.Module
 
-    static member Parse text =
-        text |> function
-        | EqualsIC Constants.Exe -> Exe
-        | EqualsIC Constants.Winexe -> Winexe
+    static member Parse text = text |> function
+        | EqualsIC Constants.Exe     -> Exe
+        | EqualsIC Constants.Winexe  -> Winexe
         | EqualsIC Constants.Library -> Library
-        | EqualsIC Constants.Module -> Module
+        | EqualsIC Constants.Module  -> Module
         | _ -> failwithf "Could not parse '%s' into a `OutputType`" text
 
-    static member TryParse text =
-        text |> function
-        | EqualsIC Constants.Exe -> Some Exe
-        | EqualsIC Constants.Winexe -> Some Winexe
+    static member TryParse text = text |> function
+        | EqualsIC Constants.Exe     -> Some Exe
+        | EqualsIC Constants.Winexe  -> Some Winexe
         | EqualsIC Constants.Library -> Some Library
-        | EqualsIC Constants.Module -> Some Module
+        | EqualsIC Constants.Module  -> Some Module
         | _ -> None
 
 // TODO - add another field to store `AdditionalDocuments` for use during ProjectInfo creation
@@ -91,7 +87,7 @@ type ProjectFileInfo = {
     SignAssembly              : bool
     AssemblyOriginatorKeyFile : string option
     GenerateXmlDocumentation  : string option
-    PreprocessorSymbolNames  : string []
+    PreprocessorSymbolNames   : string []
     SourceFiles               : string []
     ScriptFiles               : string []
     OtherFiles                : string []
@@ -356,10 +352,10 @@ module ProjectFileInfo =
             DocumentInfo.Create
                 (   DocumentId.CreateNewId projectId
                 ,   Path.GetFileNameWithoutExtension path
-                ,   sourceCodeKind=srcCodeKind
+                ,   sourceCodeKind = srcCodeKind
                 ,   filePath = fullpath
-                ,   loader=FileTextLoader(fullpath,Text.Encoding.UTF8)
-                ,   isGenerated=false
+                ,   loader = FileTextLoader(fullpath,Text.Encoding.UTF8)
+                ,   isGenerated = false
                 )
 
     let createSrcDocInfos (projectFileInfo:ProjectFileInfo) =
@@ -381,8 +377,8 @@ module ProjectFileInfo =
                 (   DocumentId.CreateNewId projectFileInfo.ProjectId
                 ,   Path.GetFileNameWithoutExtension path
                 ,   filePath = fullpath
-                ,   loader=FileTextLoader(fullpath,Text.Encoding.UTF8)
-                ,   isGenerated=false
+                ,   loader = FileTextLoader(fullpath,Text.Encoding.UTF8)
+                ,   isGenerated = false
                 )
 
     let createAdditionalDocuments projectFileInfo =
@@ -407,8 +403,8 @@ module ProjectFileInfo =
                 // TODO - this is a temporary impl, projectInfos need to be generated for the paths to projects
                 // that aren't contained in the workspace
                 Seq.append
-                    [ for projId in projIds -> ProjectReference(projId) ]
-                    [ for path in paths -> ProjectReference(ProjectId.CreateNewId()) ]
+                    [ for projId in projIds -> ProjectReference projId ]
+                    [ for path in paths -> ProjectReference ^ ProjectId.CreateNewId() ]
 
         let projDict = workspace.ProjectDictionary()
 
