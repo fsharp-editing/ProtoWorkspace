@@ -1,196 +1,301 @@
-﻿module ProtoWorkspace.Constants
+﻿
+namespace ProtoWorkspace
 
-open System
+module Constants =
 
-[<Literal>]
-let FSharpProjectGuidStr = "F2A71F9B-5D33-465A-A702-920D77279786"
-let FSharpProjectGuid = Guid FSharpProjectGuidStr
+    open System
 
-[<Literal>]
-let SolutionFolderGuidStr = "2150E333-8FDC-42A3-9474-1A3956D46DE8"
-let SolutionFolderGuid  = Guid SolutionFolderGuidStr
+    [<Literal>]
+    let FSharpProjectGuidStr = "F2A71F9B-5D33-465A-A702-920D77279786"
+    let FSharpProjectGuid = Guid FSharpProjectGuidStr
+
+    [<Literal>]
+    let SolutionFolderGuidStr = "2150E333-8FDC-42A3-9474-1A3956D46DE8"
+    let SolutionFolderGuid  = Guid SolutionFolderGuidStr
+
+    [<Literal>]
+    let FSharpLanguageName = "F#"
+
+    [<Literal>]
+    let FSharpContentTypeName = "F#"
+
+    // Common Constants
+    [<Literal>]
+    let Name = "Name"
+
+    [<Literal>]
+    let None = "None"
+
+    [<Literal>]
+    let Reference = "Reference"
+
+    // Platform Constants
+    [<Literal>]
+    let X86 = "x86"
+
+    [<Literal>]
+    let X64 = "x64"
+
+    [<Literal>]
+    let AnyCPU = "AnyCPU"
+
+    // BuildAction Constants
+    [<Literal>]
+    let Compile = "Compile"
+
+    [<Literal>]
+    let Content = "Content"
+
+    [<Literal>]
+    let Resource = "Resource"
+
+    [<Literal>]
+    let EmbeddedResource = "EmbeddedResource"
+
+    // CopyToOutputDirectory Constants
+    [<Literal>]
+    let Never = "Never"
+
+    [<Literal>]
+    let Always = "Always"
+
+    [<Literal>]
+    let PreserveNewest = "PreserveNewest"
+
+    // DebugType Constants
+    [<Literal>]
+    let PdbOnly = "PdbOnly"
+
+    [<Literal>]
+    let Full = "Full"
+
+    // OutputType Constants
+    [<Literal>]
+    let Exe = "Exe"
+
+    [<Literal>]
+    let Winexe = "Winexe"
+
+    [<Literal>]
+    let Library = "Library"
+
+    [<Literal>]
+    let Module = "Module"
+
+    // XML Attribute Name Constants
+    [<Literal>]
+    let DefaultTargets = "DefaultTargets"
+
+    [<Literal>]
+    let ToolsVersion = "ToolsVersion"
+
+    [<Literal>]
+    let Include = "Include"
+
+    [<Literal>]
+    let Condition = "Condition"
+
+    // MSBuild XML Element Constants
+    [<Literal>]
+    let Project = "Project"
+
+    [<Literal>]
+    let ItemGroup = "ItemGroup"
+
+    [<Literal>]
+    let PropertyGroup = "PropertyGroup"
+
+    [<Literal>]
+    let ProjectReference = "ProjectReference"
+
+    // XML Property Constants (found in PropertyGroups)
+    [<Literal>]
+    let AssemblyName = "AssemblyName"
+
+    [<Literal>]
+    let RootNamespace = "RootNamespace"
+
+    [<Literal>]
+    let Configuration = "Configuration"
+
+    [<Literal>]
+    let Platform = "Platform"
+
+    [<Literal>]
+    let SchemaVersion = "SchemaVersion"
+
+    [<Literal>]
+    let ProjectGuid = "ProjectGuid"
+
+    [<Literal>]
+    let ProjectType = "ProjectType"
+
+    [<Literal>]
+    let OutputType = "OutputType"
+
+    [<Literal>]
+    let TargetFrameworkVersion = "TargetFrameworkVersion"
+
+    [<Literal>]
+    let TargetFrameworkProfile = "TargetFrameworkProfile"
+
+    [<Literal>]
+    let AutoGenerateBindingRedirects = "AutoGenerateBindingRedirects"
+
+    [<Literal>]
+    let TargetFSharpCoreVersion = "TargetFSharpCoreVersion"
+
+    [<Literal>]
+    let DebugSymbols = "DebugSymbols"
+
+    [<Literal>]
+    let DebugType = "DebugType"
+
+    [<Literal>]
+    let Optimize = "Optimize"
+
+    [<Literal>]
+    let Tailcalls = "Tailcalls"
+
+    [<Literal>]
+    let OutputPath = "OutputPath"
+
+    [<Literal>]
+    let CompilationConstants = "DefineConstants"
+
+    [<Literal>]
+    let WarningLevel = "WarningLevel"
+
+    [<Literal>]
+    let PlatformTarget = "PlatformTarget"
+
+    [<Literal>]
+    let DocumentationFile = "DocumentationFile"
+
+    [<Literal>]
+    let Prefer32Bit = "Prefer32Bit"
+
+    [<Literal>]
+    let OtherFlags = "OtherFlags"
+
+    // XML Elements
+    [<Literal>]
+    let CopyToOutputDirectory = "CopyToOutputDirectory"
+
+    [<Literal>]
+    let HintPath = "HintPath"
+
+    [<Literal>]
+    let Private = "Private"
+
+    [<Literal>]
+    let SpecificVersion = "SpecificVersion"
+
+    [<Literal>]
+    let Link = "Link"
+
+    [<Literal>]
+    let Paket = "Paket"
+
+    [<Literal>]
+    let XmlDecl = @"<?xml version='1.0' encoding='utf-8'?>"
+
+    [<Literal>]
+    let Xmlns = "http://schemas.microsoft.com/developer/msbuild/2003"
 
 
-// Common Constants
-[<Literal>]
-let Name = "Name"
 
-[<Literal>]
-let None = "None"
+[<RequireQualifiedAccess>]
+/// MSBuild Properties
+module Property =
+    [<Literal>]
+    let AllowUnsafeBlocks = "AllowUnsafeBlocks"
 
-[<Literal>]
-let Reference = "Reference"
+    [<Literal>]
+    let AssemblyName = "AssemblyName"
 
-// Platform Constants
-[<Literal>]
-let X86 = "x86"
+    [<Literal>]
+    let AssemblyOriginatorKeyFile = "AssemblyOriginatorKeyFile"
 
-[<Literal>]
-let X64 = "x64"
+    [<Literal>]
+    let BuildProjectReferences = "BuildProjectReferences"
 
-[<Literal>]
-let AnyCPU = "AnyCPU"
+    [<Literal>]
+    let DefineConstants = "DefineConstants"
 
-// BuildAction Constants
-[<Literal>]
-let Compile = "Compile"
+    [<Literal>]
+    let DesignTimeBuild = "DesignTimeBuild"
 
-[<Literal>]
-let Content = "Content"
+    [<Literal>]
+    let DocumentationFile = "DocumentationFile"
 
-[<Literal>]
-let Resource = "Resource"
+    [<Literal>]
+    let LangVersion = "LangVersion"
 
-[<Literal>]
-let EmbeddedResource = "EmbeddedResource"
+    [<Literal>]
+    let OutputType = "OutputType"
 
-// CopyToOutputDirectory Constants
-[<Literal>]
-let Never = "Never"
+    [<Literal>]
+    let MSBuildExtensionsPath = "MSBuildExtensionsPath"
 
-[<Literal>]
-let Always = "Always"
+    [<Literal>]
+    let ProjectGuid = "ProjectGuid"
 
-[<Literal>]
-let PreserveNewest = "PreserveNewest"
+    [<Literal>]
+    let ProjectName = "ProjectName"
 
-// DebugType Constants
-[<Literal>]
-let PdbOnly = "PdbOnly"
+    [<Literal>]
+    let ResolveReferenceDependencies = "ResolveReferenceDependencies"
 
-[<Literal>]
-let Full = "Full"
+    [<Literal>]
+    let SignAssembly = "SignAssembly"
 
-// OutputType Constants
-[<Literal>]
-let Exe = "Exe"
+    [<Literal>]
+    let SolutionDir = "SolutionDir"
 
-[<Literal>]
-let Winexe = "Winexe"
+    [<Literal>]
+    let TargetFrameworkMoniker = "TargetFrameworkMoniker"
 
-[<Literal>]
-let Library = "Library"
+    [<Literal>]
+    let TargetPath = "TargetPath"
 
-[<Literal>]
-let Module = "Module"
+    [<Literal>]
+    let VisualStudioVersion = "VisualStudioVersion"
 
-// XML Attribute Name Constants
-[<Literal>]
-let DefaultTargets = "DefaultTargets"
 
-[<Literal>]
-let ToolsVersion = "ToolsVersion"
+[<RequireQualifiedAccess>]
+/// MSBuild Project Target Names
+module TargetName =
+    [<Literal>]
+    let ResolveReferences = "ResolveReferences"
 
-[<Literal>]
-let Include = "Include"
 
-[<Literal>]
-let Condition = "Condition"
+[<RequireQualifiedAccess>]
+/// MSBuild Project Item Names
+module ItemName =
+    [<Literal>]
+    let Analyzer = "Analyzer"
 
-// MSBuild XML Element Constants
-[<Literal>]
-let Project = "Project"
+    [<Literal>]
+    let Compile = "Compile"
 
-[<Literal>]
-let ItemGroup = "ItemGroup"
+    [<Literal>]
+    let None = "None"
 
-[<Literal>]
-let PropertyGroup = "PropertyGroup"
+    [<Literal>]
+    let ProjectReference = "ProjectReference"
 
-[<Literal>]
-let ProjectReference = "ProjectReference"
+    [<Literal>]
+    let ReferencePath = "ReferencePath"
 
-// XML Property Constants (found in PropertyGroups)
-[<Literal>]
-let AssemblyName = "AssemblyName"
+[<RequireQualifiedAccess>]
+/// MSBuild Project Metadata Names
+module MetadataName =
+    [<Literal>]
+    let FullPath = "FullPath"
 
-[<Literal>]
-let RootNamespace = "RootNamespace"
+    [<Literal>]
+    let Project = "Project"
 
-[<Literal>]
-let Configuration = "Configuration"
-
-[<Literal>]
-let Platform = "Platform"
-
-[<Literal>]
-let SchemaVersion = "SchemaVersion"
-
-[<Literal>]
-let ProjectGuid = "ProjectGuid"
-
-[<Literal>]
-let ProjectType = "ProjectType"
-
-[<Literal>]
-let OutputType = "OutputType"
-
-[<Literal>]
-let TargetFrameworkVersion = "TargetFrameworkVersion"
-
-[<Literal>]
-let TargetFrameworkProfile = "TargetFrameworkProfile"
-
-[<Literal>]
-let AutoGenerateBindingRedirects = "AutoGenerateBindingRedirects"
-
-[<Literal>]
-let TargetFSharpCoreVersion = "TargetFSharpCoreVersion"
-
-[<Literal>]
-let DebugSymbols = "DebugSymbols"
-
-[<Literal>]
-let DebugType = "DebugType"
-
-[<Literal>]
-let Optimize = "Optimize"
-
-[<Literal>]
-let Tailcalls = "Tailcalls"
-
-[<Literal>]
-let OutputPath = "OutputPath"
-
-[<Literal>]
-let CompilationConstants = "DefineConstants"
-
-[<Literal>]
-let WarningLevel = "WarningLevel"
-
-[<Literal>]
-let PlatformTarget = "PlatformTarget"
-
-[<Literal>]
-let DocumentationFile = "DocumentationFile"
-
-[<Literal>]
-let Prefer32Bit = "Prefer32Bit"
-
-[<Literal>]
-let OtherFlags = "OtherFlags"
-
-// XML Elements
-[<Literal>]
-let CopyToOutputDirectory = "CopyToOutputDirectory"
-
-[<Literal>]
-let HintPath = "HintPath"
-
-[<Literal>]
-let Private = "Private"
-
-[<Literal>]
-let SpecificVersion = "SpecificVersion"
-
-[<Literal>]
-let Link = "Link"
-
-[<Literal>]
-let Paket = "Paket"
-
-[<Literal>]
-let XmlDecl = @"<?xml version='1.0' encoding='utf-8'?>"
-
-[<Literal>]
-let Xmlns = "http://schemas.microsoft.com/developer/msbuild/2003"
+    [<Literal>]
+    let ReferenceSourceTarget = "ReferenceSourceTarget"
