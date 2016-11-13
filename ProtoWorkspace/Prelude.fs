@@ -40,7 +40,7 @@ let tryCast<'T> (o: obj): 'T option =
         debugfn "Cannot cast %O to %O" (o.GetType()) typeof<'T>.Name
         None
 
-/// Null coalescing operator
+/// Null coalescing operator, return non null a, otherwise b
 let (?|?) a b = if isNull a then b else a
 
 let (^) = (<|)

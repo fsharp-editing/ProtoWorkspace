@@ -12,88 +12,12 @@ open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
 open ProtoWorkspace.HostServices
 open FSharpVSPowerTools
+open ProtoWorkspace.Text
+open FSharp.Control
+open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
 
-
-[<CustomEquality; NoComparison>]
-type LinePositionSpanTextChange = {
-    NewText     : string
-    StartLine   : int
-    StartColumn : int
-    EndLine     : int
-    EndColumn   : int
-} with
-    override self.Equals obj =
-        match obj with
-        | :? LinePositionSpanTextChange as other ->
-            self.NewText = other.NewText && self.StartLine = other.StartLine && self.StartColumn = other.StartColumn
-            && self.EndLine = other.EndLine && self.EndColumn = other.EndColumn
-        | _ -> false
-
-    override self.GetHashCode() =
-        self.NewText.GetHashCode() * (23 + self.StartLine) * (29 + self.StartColumn) * (31 + self.EndLine)
-        * (37 + self.EndColumn)
-
-
-[<NoComparison>]
-type RequestB = {
-    Line     : int
-    Column   : int
-    Buffer   : string
-    FileName : string
-    FromDisk : bool
-    Changes  : LinePositionSpanTextChange list
-}
-
-
-type ChangeBufferRequest = {
-    FileName    : string
-    StartLine   : int
-    StartColumn : int
-    EndLine     : int
-    EndColumn   : int
-    NewText     : string
-}
-
-
-module Workspace =
-    let convertTextChanges (document : Document) (changes : TextChange seq) = async {
-        let! text = document.GetTextAsync() |> Async.AwaitTask
-        return changes
-        |> Seq.sortByDescending (fun change -> change.Span.Start)
-        |> Seq.map (fun change ->
-            let span = change.Span
-            let newText = change.NewText
-
-            let prefix, postfix, span =
-                if newText.Length > 0 then
-                    // Roslyn computes text changes on character arrays. So it might happen that a
-                    // change starts inbetween \r\n which is OK when you are offset-based but a problem
-                    // when you are line,column-based. This code extends text edits which just overlap
-                    // a with a line break to its full line break
-                    if span.Start > 0 && newText.[0] = '\n' && text.[span.Start - 1] = '\r' then
-                        // text: foo\r\nbar\r\nfoo
-                        // edit:      [----)
-                        "\r", "", TextSpan.FromBounds(span.Start - 1, span.End)
-                    elif span.End < text.Length - 1 && text.[span.End] = '\n'
-                        && newText.[newText.Length - 1] = '\r' then
-                        // text: foo\r\nbar\r\nfoo
-                        // edit:        [----)
-                        "", "\n", TextSpan.FromBounds(span.Start, span.End + 1)
-                    else "", "", span
-                else "", "", span
-
-            let linePositionSpan = text.Lines.GetLinePositionSpan span
-            {   NewText = prefix + newText + postfix
-                StartLine = linePositionSpan.Start.Line
-                StartColumn = linePositionSpan.Start.Character
-                EndLine = linePositionSpan.End.Line
-                EndColumn = linePositionSpan.End.Character
-            } : LinePositionSpanTextChange)
-    }
-
-
-open Workspace
 (*
     This header is based off of omnisharp-roslyn
     It may be necessary to go back to this in the future,
@@ -104,9 +28,6 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator : HostServicesAggregat
     inherit Workspace(aggregator.CreateHostServices(), "FSharp")
 *)
 
-open FSharp.Control
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
 
 
 [<Export; Shared>]
@@ -266,13 +187,14 @@ type FSharpWorkspace () as self =
             disposables |> Seq.iter dispose
             disposables.Clear()
 
-and internal BufferManager(workspace : FSharpWorkspace) as self =
+and internal BufferManager (workspace:FSharpWorkspace) as self =
     let transientDocuments = Dictionary<string, DocumentId list>(StringComparer.OrdinalIgnoreCase)
     let transientDocumentIds = HashSet<DocumentId>()
     let lockObj = obj()
     let workspaceEvent = workspace.WorkspaceChanged
     let subscriptions = ResizeArray<IDisposable>()
-    do workspaceEvent.Subscribe self.OnWorkspaceChanged |> subscriptions.Add
+    do
+        workspaceEvent.Subscribe self.OnWorkspaceChanged |> subscriptions.Add
 
     let tryAddTransientDocument (fileName : string) (fileContent : string) =
         if String.IsNullOrWhiteSpace fileName then false
@@ -291,23 +213,25 @@ and internal BufferManager(workspace : FSharpWorkspace) as self =
                         (docId, fileName, filePath = fileName,
                         loader = TextLoader.From(TextAndVersion.Create(sourceText, version)))
                 docInfo :: docs
-        lock lockObj (fun () ->
-            let docIds = documents |> List.map (fun doc -> doc.Id)
+        lock lockObj ^ fun () ->
+            let docIds = documents |> List.map ^ fun doc -> doc.Id
             transientDocuments.Add(fileName, docIds)
-            transientDocumentIds.UnionWith docIds)
+            transientDocumentIds.UnionWith docIds
         documents |> List.iter ^ fun doc -> workspace.AddDocument doc |> ignore
         true
 
 
-    member __.UpdateBuffer (request:RequestB) = async {
+    member __.UpdateBuffer (request:Request) = async {
         let buffer =
-            if request.FromDisk then File.ReadAllText request.FileName
-            else request.Buffer
+            match request with
+            | :? UpdateBufferRequest as request ->
+                if request.FromDisk then File.ReadAllText request.FileName else request.Buffer
+            | _ -> request.Buffer
 
         let changes = request.Changes
         let documentIds = workspace.CurrentSolution.GetDocumentIdsWithFilePath request.FileName
         if not documentIds.IsEmpty then
-            if changes = [] then
+            if Seq.isEmpty changes then
                 let sourceText = SourceText.From buffer
                 documentIds |> Seq.iter ^ fun docId -> workspace.OnDocumentChanged(docId, sourceText)
             else
@@ -315,7 +239,7 @@ and internal BufferManager(workspace : FSharpWorkspace) as self =
                 let doc = workspace.CurrentSolution.GetDocument docId
                 let! sourceText = doc.GetTextAsync() |> Async.AwaitTask
                 let sourceText =
-                    (sourceText, changes) ||> List.fold ^ fun sourceText change ->
+                    (sourceText, changes) ||> Seq.fold ^ fun sourceText change ->
                         let startOffset =
                             sourceText.Lines.GetPosition ^ LinePosition (change.StartLine, change.StartLine)
                         let endOffset =
@@ -363,6 +287,21 @@ and internal BufferManager(workspace : FSharpWorkspace) as self =
                 for docId in docIds do
                     workspace.RemoveDocument docId |> ignore
                     transientDocumentIds.Remove docId |> ignore
+
+
+    member self.FindProjectsByFileName (fileName:string) =
+        let dirInfo = (FileInfo fileName).Directory
+        let candidates =
+            workspace.CurrentSolution.Projects
+                .GroupBy(fun project -> (FileInfo project.FilePath).Directory.FullName)
+                .ToDictionary((fun grouping -> grouping.Key),( fun grouping -> List.ofSeq grouping))
+        let rec loop (dirInfo:DirectoryInfo) =
+            if isNull dirInfo then [] else
+            match candidates.TryGetValue dirInfo.FullName with
+            | true, ps -> ps
+            | _, _ -> loop dirInfo.Parent
+        loop dirInfo :> _ seq
+
 
     interface IDisposable with
         member __.Dispose() =

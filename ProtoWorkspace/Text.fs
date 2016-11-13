@@ -122,6 +122,7 @@ type QuickFix () =
         |> (*) 23 |> (+) ^ hash self.Text
 
 
+
 //
 //type QuickFix = {
 //    Text     : string
@@ -136,6 +137,11 @@ type QuickFix () =
 //    EndColumn   : int
 //    Projects : string seq
 //}
+
+type SymbolLocation () =
+    inherit QuickFix()
+    member val Kind = "" with get, set
+
 
 type SyntaxFeature  = {
     Name : string
@@ -170,7 +176,7 @@ type FileMemberElement () =
             && self.Location.Column = other.Location.Column
             && self.Location.EndLine = other.Location.EndLine
             && self.Location.EndColumn = other.Location.EndColumn
-        | _ -> failwith "'other' was not a FileMemberElement"
+        | _ -> false
 
     override self.GetHashCode() =
         13 * self.Location.Line +
@@ -184,6 +190,9 @@ type FileMemberElement () =
             | :? FileMemberElement as other -> self.CompareTo other
             | _ -> failwith "'other' was not a FileMemberElement"
 
+
+type FileMemberTree () =
+    member val TopLevelTypeDefinitions : FileMemberElement seq = Seq.empty with get, set
 
 type HighlightSpan () =
 
@@ -231,8 +240,7 @@ type HighlightSpan () =
             && self.StartColumn = other.StartColumn
             && self.EndLine = other.EndLine
             && self.EndColumn = other.EndColumn
-        | _ -> failwith "'other' was not a FileMemberElement"
-
+        | _ -> false
 
     override self.GetHashCode() =
         13 * self.StartLine +
@@ -240,12 +248,12 @@ type HighlightSpan () =
         23 * self.EndLine +
         31 * self.EndColumn
 
-
     interface IComparable with
         member self.CompareTo (other:obj) =
             match other with
             | :? HighlightSpan as other -> self.CompareTo other
             | _ -> failwith "'other' was not a HighLightSpan"
+
 
 type HighlightClassification =
     | Name                   = 1
@@ -258,4 +266,54 @@ type HighlightClassification =
     | Identifier             = 8
     | PreprocessorKeyword    = 9
     | ExcludedCode           = 10
+
+
+type SignatureHelpParameter = {
+    Name          : string
+    Label         : string
+    Documentation : string
+}
+
+
+type SignatureHelpItem = {
+    Name          : string
+    Label         : string
+    Documentation : string
+    Parameters    : SignatureHelpParameter list
+}
+
+
+type SignatureHelp = {
+    Signatures      : SignatureHelpItem list
+    ActiveSignature : int
+    ActiveParameter : int
+}
+
+
+type MetadataSource = {
+    AssemblyName  : string
+    TypeName      : string
+    ProjectName   : string
+    VersionNumber : string
+    Language      : string
+}
+
+
+type CodeAction = {
+    Identifier : string
+    Name : string
+}
+
+type Point = {
+    [<JsonConverter(typeof<ZeroBasedIndexConverter>)>]
+    Line : int
+    [<JsonConverter(typeof<ZeroBasedIndexConverter>)>]
+    Column : int
+}
+
+type Range = {
+    Start : Point
+    End   : Point
+}
+
 
