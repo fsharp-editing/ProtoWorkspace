@@ -76,7 +76,10 @@
     <Compile Include="MSBuildConfig.fs" />
     <Compile Include="MSBuildProjectSystem.fs" />
     <Compile Include="WorkspaceServices.fs" />
-    <Compile Include="Providers\CompletionProvider.fs" />
+    <Compile Include="Services\ServiceInterfaces.fs" />
+    <Compile Include="Services\Highlighting.fs" />
+    <Compile Include="Services\QuickInfo.fs" />
+    <Compile Include="Services\BraceMatching.fs" />
     <None Include="CodeService.fsx" />
     <None Include="ConvertProject.fsx" />
     <None Include="slntest.fsx" />
