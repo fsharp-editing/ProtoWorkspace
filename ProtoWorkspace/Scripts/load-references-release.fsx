@@ -52,3 +52,4 @@
 #r "../../packages/Microsoft.Build.Framework/ref/net45/Microsoft.Build.Framework.dll"
 #r "../../packages/Microsoft.Build.Tasks.Core/ref/net45/Microsoft.Build.Tasks.Core.dll"
 #r "../../packages/Microsoft.Build.Utilities.Core/ref/net45/Microsoft.Build.Utilities.Core.dll"
+#r "../../packages/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"

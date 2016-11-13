@@ -2,12 +2,21 @@
 module ProtoWorkspace.Extensions
 open System
 open System.IO
+open System.Threading.Tasks
 open System.Collections.Generic
 open Microsoft.Extensions.Logging
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
+
+
+type AsyncBuilder with
+    member self.Bind (task: 'a Task, fn: 'a -> 'b Async) =
+        self.Bind (Async.AwaitTask task, fn)
+
+    member self.Bind (task: Task, fn: unit -> unit Async) =
+        self.Bind (Async.AwaitTask task, fn)
 
 
 type ILogger with
@@ -20,6 +29,10 @@ type ILogger with
 
 
 (* CodeAnalysis Extensions *)
+
+type TextSpan with
+    /// Compares two instances of Microsoft.CodeAnalysis.Text.TextSpan
+    static member CompareTo (a:TextSpan,b:TextSpan) = a.CompareTo b
 
 type Document with
 
@@ -89,15 +102,15 @@ type Project with
             ,   self.AssemblyName
             ,   self.Language
             ,   self.FilePath
-            ,   outputFilePath=self.OutputFilePath
-            ,   projectReferences= self.ProjectReferences
-            ,   metadataReferences=self.MetadataReferences
-            ,   analyzerReferences=self.AnalyzerReferences
+            ,   outputFilePath = self.OutputFilePath
+            ,   projectReferences = self.ProjectReferences
+            ,   metadataReferences = self.MetadataReferences
+            ,   analyzerReferences = self.AnalyzerReferences
             ,   documents = (self.Documents |> Seq.map(fun doc -> doc.ToDocumentInfo()))
-            ,   additionalDocuments= (self.AdditionalDocuments |> Seq.map(fun doc -> doc.ToDocumentInfo()))
-            ,   compilationOptions=self.CompilationOptions
-            ,   parseOptions=self.ParseOptions
-            ,   isSubmission=self.IsSubmission
+            ,   additionalDocuments = (self.AdditionalDocuments |> Seq.map(fun doc -> doc.ToDocumentInfo()))
+            ,   compilationOptions = self.CompilationOptions
+            ,   parseOptions = self.ParseOptions
+            ,   isSubmission = self.IsSubmission
             )
 
 

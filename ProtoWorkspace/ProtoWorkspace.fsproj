@@ -62,15 +62,18 @@
     <Compile Include="Extensions.fs" />
     <Compile Include="Constants.fs" />
     <Compile Include="Environment.fs" />
-    <Compile Include="Text.fs" />
+    <Compile Include="Converters.fs" />
     <Compile Include="Loaders.fs" />
-    <Compile Include="MSBuildConfig.fs" />
+    <Compile Include="Text.fs" />
+    <Compile Include="Commands.fs" />
     <Compile Include="ProjectFileInfo.fs" />
     <Compile Include="SolutionFileInfo.fs" />
     <Compile Include="BufferTracker.fs" />
     <Compile Include="ProjectConfig.fs" />
     <Compile Include="HostServices.fs" />
     <Compile Include="Workspace.fs" />
+    <Compile Include="LanguageService.fs" />
+    <Compile Include="MSBuildConfig.fs" />
     <Compile Include="MSBuildProjectSystem.fs" />
     <Compile Include="WorkspaceServices.fs" />
     <Compile Include="Providers\CompletionProvider.fs" />
@@ -339,6 +342,17 @@
       <ItemGroup>
         <Reference Include="Microsoft.Extensions.PlatformAbstractions">
           <HintPath>..\packages\Microsoft.Extensions.PlatformAbstractions\lib\net451\Microsoft.Extensions.PlatformAbstractions.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6' Or $(TargetFrameworkVersion) == 'v4.6.1' Or $(TargetFrameworkVersion) == 'v4.6.2' Or $(TargetFrameworkVersion) == 'v4.6.3')">
+      <ItemGroup>
+        <Reference Include="Newtonsoft.Json">
+          <HintPath>..\packages\Newtonsoft.Json\lib\net45\Newtonsoft.Json.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
