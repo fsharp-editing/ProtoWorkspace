@@ -19,7 +19,7 @@ slnFileInfo.Path
 ;;
 let slnInfo = SolutionFileInfo.toSolutionInfo fswork slnFileInfo
 
-let sln = fswork.AddSolution slnInfo
+let sln = fswork.AddSolutionInfo slnInfo
 ;;
 string fswork.CurrentSolution.FilePath
 

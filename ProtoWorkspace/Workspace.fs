@@ -31,9 +31,9 @@ type FSharpWorkspace [<ImportingConstructor>] (aggregator : HostServicesAggregat
 
 
 [<Export; Shared>]
-type FSharpWorkspace () as self =
+type FSharpWorkspace (hostServices : HostServices) as self =
 //    inherit Workspace(MefHostServices.DefaultHost, "FSharp")
-    inherit Workspace(FSharpHostService(), Constants.FSharpLanguageName )
+    inherit Workspace(hostServices,Constants.FSharpLanguageName )
     let bufferManager = new BufferManager(self)
     let disposables = ResizeArray<IDisposable>()
     let checker = FSharpChecker.Create()
@@ -52,6 +52,13 @@ type FSharpWorkspace () as self =
 
     do
         disposables.Add bufferManager
+
+    new (aggregator:HostServicesAggregator) =
+        new FSharpWorkspace (aggregator.CreateHostServices())
+
+    new () =
+        new FSharpWorkspace(FSharpHostService())
+
 
 
     member __.Checker : FSharpChecker = checker

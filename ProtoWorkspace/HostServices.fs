@@ -1,5 +1,6 @@
-﻿module ProtoWorkspace.HostServices
+﻿namespace ProtoWorkspace.HostServices
 
+open ProtoWorkspace
 open System
 open System.Reflection
 open System.Composition
