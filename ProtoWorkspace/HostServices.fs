@@ -2,8 +2,10 @@
 
 open ProtoWorkspace
 open System
+open System.Collections.Generic
 open System.Reflection
 open System.Composition
+open System.Composition.Hosting.Core
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Host
@@ -65,3 +67,34 @@ type HostServicesAggregator [<ImportingConstructor>] ([<ImportMany>] hostService
 
     let assemblies = builder.ToImmutableArray()
     member __.CreateHostServices() = MefHostServices.Create assemblies
+
+
+type MefValueProvider<'a> (item:'a) =
+    inherit ExportDescriptorProvider()
+
+//    override self.GetExportDescriptors (contract:CompositionContract, descriptorAcessor:DependencyAccessor) =
+//        seq { if contract.ContractType = typeof<'a> then
+//                yield ExportDescriptorPromise
+//                    (   contract, String.Empty, true,
+//                        (fun () -> Seq.empty : CompositionDependency seq),
+//                        (fun deps ->
+//                            ExportDescriptor.Create
+//                                (   CompositeActivator (fun context operation -> item :> obj)
+//                                ,   Dictionary<string,obj>())
+//                        )
+//                    )
+//            else yield! Seq.empty
+//        }
+
+    override self.GetExportDescriptors (contract:CompositionContract, _ ) =
+        seq { if contract.ContractType = typeof<'a> then
+                yield ExportDescriptorPromise
+                    (   contract, String.Empty, true,
+                        (fun () -> Seq.empty : CompositionDependency seq),
+                        (fun _ -> ExportDescriptor.Create(CompositeActivator(fun _ _ -> item :> obj),Dictionary<_,_>()))
+                    )
+            else yield! Seq.empty
+        }
+
+type MefValueProvider =
+    static member From<'a> (value:'a) = MefValueProvider<'a> value

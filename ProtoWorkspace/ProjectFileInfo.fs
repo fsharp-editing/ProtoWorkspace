@@ -2,15 +2,11 @@
 
 open System
 open System.IO
-open System.Collections.Generic
 open Microsoft.CodeAnalysis
 open System.Runtime.Versioning
-open Microsoft.Extensions.Logging
-open Microsoft.Build
 open Microsoft.Build.Evaluation
 open Microsoft.Build.Execution
-open System.Xml
-open System.Xml.Linq
+
 
 /// Specifies the version of the F# compiler that should be used
 type LanguageVersion =
@@ -75,98 +71,42 @@ type OutputType =
         | _ -> None
 
 // TODO - add another field to store `AdditionalDocuments` for use during ProjectInfo creation
+/// ProjectFileInfo combines the information needed to create a ProjectInfo for the workspace
+/// and the configuration info to create a FSharpProjectOptions
 type ProjectFileInfo = {
     ProjectId                 : ProjectId
     ProjectGuid               : Guid option
     Name                      : string option
     ProjectFilePath           : string
     TargetFramework           : FrameworkName option
+    FrameworkVersion          : string option
     AssemblyName              : string
-    TargetPath                : string
+    OutputPath                : string
     OutputType                : OutputType
     SignAssembly              : bool
     AssemblyOriginatorKeyFile : string option
     GenerateXmlDocumentation  : string option
+    Options                   : string []
     PreprocessorSymbolNames   : string []
-    SourceFiles               : string []
+    CompileFiles              : string []
+    ResourceFiles             : string []
+    EmbeddedResourceFiles     : string []
+    ContentFiles              : string []
+    PageFiles                 : string []
     ScriptFiles               : string []
     OtherFiles                : string []
     References                : string []
     /// Collection of paths fsproj files for the project references
     ProjectReferences         : string []
-//    ProjectReferences         : ProjectFileInfo ResizeArray
     Analyzers                 : string []
+//    LogOutput                 : string
 } with
-    (* Unsure how to convert these
-    public LanguageVersion SpecifiedLanguageVersion { get; }
-*)
     member self.ProjectDirectory = Path.GetDirectoryName self.ProjectFilePath
-(* From Partial Clases
 
-    public partial class ProjectFileInfo
-    {
-        private static class ItemNames
-        {
-            public const string Analyzer = nameof(Analyzer);
-            public const string Compile = nameof(Compile);
-            public const string ProjectReference = nameof(ProjectReference);
-            public const string ReferencePath = nameof(ReferencePath);
-        }
-    }
-
-    public partial class ProjectFileInfo
-    {
-        private static class MetadataNames
-        {
-            public const string FullPath = nameof(FullPath);
-            public const string Project = nameof(Project);
-            public const string ReferenceSourceTarget = nameof(ReferenceSourceTarget);
-        }
-    }
-
-    public partial class ProjectFileInfo
-    {
-        private static class PropertyNames
-        {
-            AllowUnsafeBlocks             = nameof(AllowUnsafeBlocks);
-            AssemblyName                  = nameof(AssemblyName);
-            AssemblyOriginatorKeyFile     = nameof(AssemblyOriginatorKeyFile);
-            BuildProjectReferences        = nameof(BuildProjectReferences);
-            DefineConstants               = nameof(DefineConstants);
-            DesignTimeBuild               = nameof(DesignTimeBuild);
-            DocumentationFile             = nameof(DocumentationFile);
-            LangVersion                   = nameof(LangVersion);
-            OutputType                    = nameof(OutputType);
-            MSBuildExtensionsPath         = nameof(MSBuildExtensionsPath);
-            ProjectGuid                   = nameof(ProjectGuid);
-            ProjectName                   = nameof(ProjectName);
-            _ResolveReferenceDependencies = nameof(_ResolveReferenceDependencies);
-            SignAssembly                  = nameof(SignAssembly);
-            SolutionDir                   = nameof(SolutionDir);
-            TargetFrameworkMoniker        = nameof(TargetFrameworkMoniker);
-            TargetPath                    = nameof(TargetPath);
-            VisualStudioVersion           = nameof(VisualStudioVersion);
-        }
-    }
-
-    public partial class ProjectFileInfo
-    {
-        private static class TargetNames
-        {
-            public const string ResolveReferences = nameof(ResolveReferences);
-        }
-    }
-
-}
-
-|| NOTE || - Omnisharp's 'ProjectFileInfo_Mono.cs' for Mono may need to be ported too
-
-*)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ProjectFileInfo =
     open Microsoft.CodeAnalysis.Diagnostics
-    open Microsoft.CodeAnalysis.CodeActions
     open ProtoWorkspace.Loaders
 
     let getFullPath (projectItem : ProjectItemInstance) = projectItem.GetMetadataValue MetadataName.FullPath
@@ -174,80 +114,6 @@ module ProjectFileInfo =
         projectItem.GetMetadataValue(MetadataName.ReferenceSourceTarget)
                    .Equals(ItemName.ProjectReference, StringComparison.OrdinalIgnoreCase)
 
-//    // TODO - Rewrite so it can work with all args besides `projectFilePath` as options
-//    let evaluate (projectFilePath : string) (solutionDirectory : string) (logger : ILogger) (options : MSBuildOptions)
-//        (diagnostics : MSBuildDiagnosticsMessage ICollection) =
-//        if not (File.Exists projectFilePath) then failwithf "No project file found at '%s'" projectFilePath
-//
-//        let checkProp prop value =
-//            if not ^ String.IsNullOrWhiteSpace value then [prop,value] else []
-//
-//        let globalProperties =
-//            dict [
-//                yield Property.DesignTimeBuild, "true"
-//                yield Property.BuildProjectReferences, "false"
-//                yield Property.ResolveReferenceDependencies, "true"
-//                yield Property.SolutionDir, solutionDirectory + string Path.DirectorySeparatorChar
-//                yield! checkProp Property.MSBuildExtensionsPath options.MSBuildExtensionsPath
-//                yield! checkProp Property.VisualStudioVersion options.VisualStudioVersion
-//            ]
-//
-//        let collection = new ProjectCollection(globalProperties)
-//        logger.LogInfofn "Using toolset %s for '%s'" (options.ToolsVersion ?|? collection.DefaultToolsVersion)
-//            projectFilePath
-//        let project =
-//            if String.IsNullOrEmpty options.ToolsVersion then collection.LoadProject projectFilePath
-//            else collection.LoadProject(projectFilePath, options.ToolsVersion)
-//
-//        let projectInstance = project.CreateProjectInstance()
-//
-//        let buildResult : bool =
-//            let loggers = [ MSBuildLogForwarder(logger, diagnostics) :> Microsoft.Build.Framework.ILogger ] :> seq<_>
-//            projectInstance.Build (TargetName.ResolveReferences, loggers)
-//
-//        // if not buildResult then null else
-//        let sourceFiles =
-//            projectInstance.GetItems ItemName.Compile
-//            |> Seq.map getFullPath
-//            |> Array.ofSeq
-//
-//        let references =
-//            projectInstance.GetItems ItemName.ReferencePath
-//            |> Seq.filter isProjectReference
-//            |> Seq.map getFullPath
-//            |> Array.ofSeq
-//
-//        let projectReferences =
-//            projectInstance.GetItems ItemName.ProjectReference
-//            |> Seq.filter isProjectReference
-//            |> Seq.map getFullPath
-//            |> Array.ofSeq
-//
-//        let analyzers =
-//            projectInstance.GetItems ItemName.Analyzer
-//            |> Seq.map getFullPath
-//            |> Array.ofSeq
-//
-//        {   ProjectFilePath = projectFilePath
-//            ProjectId = ProjectId.CreateNewId()
-//            ProjectGuid = projectInstance.GetPropertyValue Property.ProjectGuid |> PropertyConverter.toGuid
-//            Name = projectInstance.TryGetPropertyValue Property.ProjectName
-//            TargetFramework = projectInstance.TryGetPropertyValue Property.TargetFrameworkMoniker |> Option.map FrameworkName
-//            AssemblyName = projectInstance.GetPropertyValue Property.AssemblyName
-//            TargetPath = projectInstance.GetPropertyValue Property.TargetPath
-//            OutputType = OutputType.Parse <| projectInstance.GetPropertyValue Property.OutputType
-//            SignAssembly = PropertyConverter.toBoolean <| projectInstance.GetPropertyValue Property.SignAssembly
-//            AssemblyOriginatorKeyFile = projectInstance.TryGetPropertyValue Property.AssemblyOriginatorKeyFile
-//            GenerateXmlDocumentation = projectInstance.TryGetPropertyValue Property.DocumentationFile
-//            PreprocessorySymbolNames =
-//                projectInstance.GetPropertyValue Property.DefineConstants
-//                |> PropertyConverter.toDefineConstants
-//                |> Array.ofSeq
-//            SourceFiles = sourceFiles
-//            References = references
-//            ProjectReferences = projectReferences
-//            Analyzers = analyzers
-//        }
 
     let create (projectFilePath:string) =
         if not (File.Exists projectFilePath) then failwithf "No project file found at '%s'" projectFilePath else
@@ -266,11 +132,157 @@ module ProjectFileInfo =
                     "ResolveReferenceDependencies"
                 |])
 
-        let fromBuildRes (targetName:string) (result:BuildResult) =
-            if not ^ result.ResultsByTarget.ContainsKey targetName then [||] else
-            result.ResultsByTarget.[targetName].Items
-
         let result = manager.Build(buildParam,requestReferences)
+
+        let fromBuildRes targetName =
+            if result.ResultsByTarget.ContainsKey targetName then
+                result.ResultsByTarget.[targetName].Items
+                |> Seq.map(fun r -> r.ItemSpec)
+                |> Array.ofSeq
+            else
+                [||]
+
+        let projectReferences = fromBuildRes "ResolveProjectReferences"
+
+        let references = fromBuildRes "ResolveAssemblyReferences"
+
+        let getItems itemType =
+            if project.ItemTypes.Contains itemType then
+                project.GetItems itemType
+                |> Seq.map(fun item -> item.EvaluatedInclude)
+            else
+                Seq.empty
+
+        let getProperty propName =
+            let s = project.GetPropertyValue propName
+            if  String.IsNullOrWhiteSpace s then None
+            else Some s
+
+        let outFileOpt =  getProperty "TargetPath"
+
+        let getbool (s:string option) =
+            match s with
+            | None -> false
+            | Some s ->
+                match Boolean.TryParse s with
+                | true, result -> result | false, _ -> false
+
+        let split (s:string option) (cs:char[]) =
+            match s with
+            | None -> [||]
+            | Some s ->
+                if String.IsNullOrWhiteSpace s then [||]
+                else s.Split(cs, StringSplitOptions.RemoveEmptyEntries)
+
+        let fxVer               = getProperty "TargetFrameworkVersion"
+        let optimize            = getProperty "Optimize" |> getbool
+        let assemblyNameOpt     = getProperty "AssemblyName"
+        let tailcalls           = getProperty "Tailcalls" |> getbool
+        let outputPathOpt       = getProperty "OutputPath"
+        let docFileOpt          = getProperty "DocumentationFile"
+        let outputTypeOpt       = getProperty "OutputType"
+        let debugTypeOpt        = getProperty "DebugType"
+        let baseAddressOpt      = getProperty "BaseAddress"
+        let sigFileOpt          = getProperty "GenerateSignatureFile"
+        let keyFileOpt          = getProperty "KeyFile"
+        let pdbFileOpt          = getProperty "PdbFile"
+        let platformOpt         = getProperty "Platform"
+        let targetTypeOpt       = getProperty "TargetType"
+        let versionFileOpt      = getProperty "VersionFile"
+        let targetProfileOpt    = getProperty "TargetProfile"
+        let warnLevelOpt        = getProperty "Warn"
+        let subsystemVersionOpt = getProperty "SubsystemVersion"
+        let win32ResOpt         = getProperty "Win32ResourceFile"
+        let heOpt               = getProperty "HighEntropyVA" |> getbool
+        let win32ManifestOpt    = getProperty "Win32ManifestFile"
+        let debugSymbols        = getProperty "DebugSymbols" |> getbool
+        let prefer32bit         = getProperty "Prefer32Bit" |> getbool
+        let warnAsError         = getProperty "TreatWarningsAsErrors" |> getbool
+        let defines             = split (getProperty "DefineConstants") [| ';'; ','; ' ' |]
+        let nowarn              = split (getProperty "NoWarn") [| ';'; ','; ' ' |]
+        let warningsAsError     = split (getProperty "WarningsAsErrors") [| ';'; ','; ' ' |]
+        let libPaths            = split (getProperty "ReferencePath") [| ';'; ',' |]
+        let otherFlags          = split (getProperty "OtherFlags") [| ' ' |]
+        let isLib               =
+            match outputTypeOpt with
+            | None -> false
+            | Some prop -> prop ="Library"
+
+        let pages = getItems "Page"
+        let embeddedResources = getItems "EmbeddedResource"
+        let files = getItems "Compile"
+        let resources = getItems "Resource"
+        let noaction = getItems "None"
+        let content = getItems "Content"
+
+
+        let fscFlag  str (opt:string option) = seq{
+            match  opt with
+            | None -> ()
+            | Some s -> yield str + s
+        }
+
+        let fscFlags flag (ls:string []) = seq {
+            for x in ls do
+                if not (String.IsNullOrWhiteSpace x) then yield flag + x
+        }
+
+        let options = [
+            yield "--simpleresolution"
+            yield "--noframework"
+            yield! fscFlag "--out:" outFileOpt
+            yield! fscFlag  "--doc:" docFileOpt
+            yield! fscFlag  "--baseaddress:" baseAddressOpt
+            yield! fscFlag  "--keyfile:" keyFileOpt
+            yield! fscFlag  "--sig:" sigFileOpt
+            yield! fscFlag  "--pdb:" pdbFileOpt
+            yield! fscFlag  "--versionfile:" versionFileOpt
+            yield! fscFlag  "--warn:" warnLevelOpt
+            yield! fscFlag "--subsystemversion:" subsystemVersionOpt
+            if heOpt then yield "--highentropyva+"
+            yield! fscFlag  "--win32res:" win32ResOpt
+            yield! fscFlag  "--win32manifest:" win32ManifestOpt
+            yield! fscFlag  "--targetprofile:"  targetProfileOpt
+            yield "--fullpaths"
+            yield "--flaterrors"
+            if warnAsError then yield "--warnaserror"
+            yield
+                if isLib then "--target:library"
+                else "--target:exe"
+            yield! fscFlags "--define:" defines
+            yield! fscFlags "--nowarn:" nowarn
+            yield! fscFlags "--warnaserror:" warningsAsError
+            yield if debugSymbols then "--debug+" else "--debug-"
+            yield if optimize then "--optimize+"  else "--optimize-"
+            yield if tailcalls then "--tailcalls+" else "--tailcalls-"
+            match debugTypeOpt with
+            | None -> ()
+            | Some debugType ->
+                match debugType.ToUpperInvariant() with
+                | "NONE" -> ()
+                | "PDBONLY" -> yield "--debug:pdbonly"
+                | "FULL" -> yield "--debug:full"
+                | _ -> ()
+            match platformOpt |> Option.map (fun o -> o.ToUpperInvariant()), prefer32bit,
+                    targetTypeOpt |> Option.map (fun o -> o.ToUpperInvariant()) with
+            | Some "ANYCPU", true, Some "EXE" | Some "ANYCPU", true, Some "WINEXE" -> yield "--platform:anycpu32bitpreferred"
+            | Some "ANYCPU", _, _ -> yield "--platform:anycpu"
+            | Some "X86", _, _ -> yield "--platform:x86"
+            | Some "X64", _, _ -> yield "--platform:x64"
+            | Some "ITANIUM", _, _ -> yield "--platform:Itanium"
+            | _ -> ()
+            match targetTypeOpt |> Option.map (fun o -> o.ToUpperInvariant()) with
+            | Some "LIBRARY" -> yield "--target:library"
+            | Some "EXE" -> yield "--target:exe"
+            | Some "WINEXE" -> yield "--target:winexe"
+            | Some "MODULE" -> yield "--target:module"
+            | _ -> ()
+            yield! otherFlags
+            yield! Seq.map((+)"--resource:") resources
+            yield! Seq.map((+)"--lib:") libPaths
+            yield! Seq.map((+)"--r:") references
+            yield! files
+        ]
 
         let getItemPaths itemName =
             projectInstance.GetItems itemName |> Seq.map getFullPath
@@ -316,33 +328,39 @@ module ProjectFileInfo =
             |> PropertyConverter.toDefineConstants
 
 
-        let projectName = projectInstance.TryGetPropertyValue Property.ProjectName
-        let assemblyName = projectInstance.GetPropertyValue Property.AssemblyName
-        let targetPath = projectInstance.GetPropertyValue Property.TargetPath
+        let projectName     = projectInstance.TryGetPropertyValue Property.ProjectName
+        let assemblyName    = projectInstance.GetPropertyValue Property.AssemblyName
+        let targetPath      = projectInstance.GetPropertyValue Property.TargetPath
         let targetFramework = projectInstance.TryGetPropertyValue Property.TargetFrameworkMoniker |> Option.map FrameworkName
         let assemblyKeyFile = projectInstance.TryGetPropertyValue Property.AssemblyOriginatorKeyFile
-        let signAssembly = PropertyConverter.toBoolean <| projectInstance.GetPropertyValue Property.SignAssembly
-        let outputType = OutputType.Parse <| projectInstance.GetPropertyValue Property.OutputType
-        let xmlDocs = projectInstance.TryGetPropertyValue Property.DocumentationFile
+        let signAssembly    = PropertyConverter.toBoolean <| projectInstance.GetPropertyValue Property.SignAssembly
+        let outputType      = OutputType.Parse <| projectInstance.GetPropertyValue Property.OutputType
+        let xmlDocs         = projectInstance.TryGetPropertyValue Property.DocumentationFile
 
         {   ProjectFilePath           = projectFilePath
-            ProjectId                 = projectId
             ProjectGuid               = projectGuid
+            ProjectId                 = projectId
             Name                      = projectName
             TargetFramework           = targetFramework
+            FrameworkVersion          = fxVer
             AssemblyName              = assemblyName
-            TargetPath                = targetPath
+            OutputPath                = targetPath
             OutputType                = outputType
             SignAssembly              = signAssembly
             AssemblyOriginatorKeyFile = assemblyKeyFile
             GenerateXmlDocumentation  = xmlDocs
-            PreprocessorSymbolNames   = defineConstants |> Array.ofSeq
-            SourceFiles               = sourceFiles |> Array.ofSeq
-            ScriptFiles               = scriptFiles |> Array.ofSeq
-            OtherFiles                = otherFiles |> Array.ofSeq
-            References                = references |> Array.ofSeq
+            PreprocessorSymbolNames   = defineConstants   |> Array.ofSeq
+            CompileFiles              = sourceFiles       |> Array.ofSeq
+            PageFiles                 = pages             |> Array.ofSeq
+            ContentFiles              = content           |> Array.ofSeq
+            ScriptFiles               = scriptFiles       |> Array.ofSeq
+            ResourceFiles             = resources         |> Array.ofSeq
+            EmbeddedResourceFiles     = embeddedResources |> Array.ofSeq
+            OtherFiles                = otherFiles        |> Array.ofSeq
+            References                = references        |> Array.ofSeq
             ProjectReferences         = projectReferences |> Array.ofSeq
-            Analyzers                 = analyzers |> Array.ofSeq
+            Analyzers                 = analyzers         |> Array.ofSeq
+            Options                   = options           |> Array.ofSeq
         }
 
 
@@ -361,7 +379,7 @@ module ProjectFileInfo =
     let createSrcDocInfos (projectFileInfo:ProjectFileInfo) =
         createSrcDocs  projectFileInfo.ProjectDirectory
                     projectFileInfo.ProjectId
-                    projectFileInfo.SourceFiles
+                    projectFileInfo.CompileFiles
                     SourceCodeKind.Regular
 
     let createScriptDocInfos (projectFileInfo:ProjectFileInfo) =
@@ -413,9 +431,9 @@ module ProjectFileInfo =
             ,   version             = VersionStamp.Create()
             ,   name                = defaultArg projectFileInfo.Name String.Empty
             ,   assemblyName        = projectFileInfo.AssemblyName
-            ,   language            = "FSharp"
+            ,   language            = Constants.FSharpLanguageName
             ,   filePath            = projectFileInfo.ProjectFilePath
-            ,   outputFilePath      = projectFileInfo.TargetPath
+            ,   outputFilePath      = projectFileInfo.OutputPath
             (*  - TODO -
                 Correctly adding projectreferences is going to be an issue
                 ProjectReference is created using a project id, which means a collection of

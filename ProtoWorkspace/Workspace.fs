@@ -18,21 +18,9 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 
-(*
-    This header is based off of omnisharp-roslyn
-    It may be necessary to go back to this in the future,
-    but at the moment a simplified version is being used to build up from
-
-[<Export; Shared>]
-type FSharpWorkspace [<ImportingConstructor>] (aggregator : HostServicesAggregator) as self =
-    inherit Workspace(aggregator.CreateHostServices(), "FSharp")
-*)
-
-
 
 [<Export; Shared>]
 type FSharpWorkspace (hostServices : HostServices) as self =
-//    inherit Workspace(MefHostServices.DefaultHost, "FSharp")
     inherit Workspace(hostServices,Constants.FSharpLanguageName )
     let bufferManager = new BufferManager(self)
     let disposables = ResizeArray<IDisposable>()
@@ -126,7 +114,8 @@ type FSharpWorkspace (hostServices : HostServices) as self =
     /// Adds multiple projects to the workspace at once. All existing projects remain intact.
     member self.AddProjects (projectInfos:seq<_>) =
         checkNullArg projectInfos "projectInfos"
-        projectInfos |> Seq.iter self.OnProjectAdded
+        for info in projectInfos do
+            self.OnProjectAdded info
         base.UpdateReferencesAfterAdd()
 
 
